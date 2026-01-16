@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgazzaton.io | فورتون غزة</title>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        body { background: #0a0a0a; color: white; font-family: sans-serif; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .card { border: 1px solid #1aed1a; padding: 30px; border-radius: 20px; background: rgba(255,255,255,0.05); width: 90%; max-width: 400px; box-shadow: 0 0 20px rgba(26,237,26,0.2); }
+        h1 { color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        #ton-connect-button { display: flex; justify-content: center; margin: 25px 0; }
+        .btn-pay { background: linear-gradient(45deg, #1aed1a, #0b9e0b); color: black; border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; display: none; width: 100%; font-size: 16px; }
+        .footer { margin-top: 20px; font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>FORGAZZATON</h1>
+        <p>استثمر 1 TON لدعم غزة وبناء مستقبلك المالي</p>
+        <div id="ton-connect-button"></div>
+        <button id="pay-btn" class="btn-pay" onclick="sendTON()">تفعيل المستوى الأول (1 TON)</button>
+        <div class="footer">نظام لامركزي 100% على شبكة TON</div>
+    </div>
+    <script>
+        const tonConnectUI = new TONConnectUI.TonConnectUI({
+            manifestUrl: 'https://raw.githubusercontent.com/ton-community/tutorials/main/03-client/test/public/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-button'
+        });
+        tonConnectUI.onStatusChange(wallet => {
+            if (wallet) document.getElementById('pay-btn').style.display = 'block';
+        });
+        async function sendTON() {
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 60,
+                messages: [{ 
+                    address: "ضع_عنوان_محفظتك_هنا", 
+                    amount: "1000000000" 
+                }]
+            };
+            try { await tonConnectUI.sendTransaction(transaction); alert("تم إرسال الطلب بنجاح!"); } 
+            catch (e) { alert("فشلت العملية، تأكد من وجود رصيد."); }
+        }
+    </script>
+</body>
+</html>
