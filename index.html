@@ -1,40 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FORGAZATON</title>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <style>
+        body { background: #0f172a; color: white; text-align: center; font-family: sans-serif; padding-top: 50px; }
+        .btn-pay { background: #0088cc; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; display: none; margin: 20px auto; font-weight: bold; width: 250px; }
+        #ton-connect-button { margin: 0 auto; display: flex; justify-content: center; }
+        .footer { margin-top: 40px; font-size: 14px; color: #64748b; }
+    </style>
+</head>
+<body>
 
-        <div id="ton-connect-button"></div>
-        <button id="pay-btn" class="btn-pay">PAY 1 TON TO JOIN</button>
-
-        <div class="footer">DECENTRALIZED MATRIX SYSTEM</div>
-    </div>
+    <div id="ton-connect-button"></div>
+    <button id="pay-btn" class="btn-pay">PAY 1 TON TO JOIN</button>
+    <div class="footer">DECENTRALIZED MATRIX SYSTEM</div>
 
     <script>
-        // إعداد واجهة المحفظة باستخدام الرابط الصحيح
+        // FINAL CONFIGURATION - DO NOT CHANGE
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://fortogazza.netlify.app/tonconnect-manifest.json',
+            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button'
         });
 
-        // مراقبة حالة المحفظة لإظهار زر الدفع
+        // Toggle Payment Button
         tonConnectUI.onStatusChange(wallet => {
             const payBtn = document.getElementById('pay-btn');
             payBtn.style.display = wallet ? 'block' : 'none';
         });
 
-        // وظيفة إرسال الأموال لمحفظتك
+        // Payment Logic
         async function sendTON() {
             const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 300,
+                validUntil: Math.floor(Date.now() / 1000) + 360,
                 messages: [
                     {
-                        address: "UQBufh61LHE5H1NDJXqWRIVCX-fW9m6L9mEUP-I4hM_rR3N4",
+                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx",
                         amount: "1000000000" // 1 TON
                     }
                 ]
             };
-
             try {
                 await tonConnectUI.sendTransaction(transaction);
-                alert("تم إرسال المعاملة بنجاح!");
+                alert("Transaction Successful!");
             } catch (e) {
-                alert("تم إلغاء العملية أو حدث خطأ.");
+                alert("Transaction Failed.");
             }
         }
 
