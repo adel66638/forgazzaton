@@ -1,39 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FORGAZATON</title>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <style>
-        body { background: #0f172a; color: white; text-align: center; font-family: sans-serif; padding-top: 50px; }
-        .btn-pay { background: #0088cc; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; display: none; margin: 20px auto; font-weight: bold; width: 250px; }
-        #ton-connect-button { margin: 0 auto; display: flex; justify-content: center; }
-        .footer { margin-top: 40px; font-size: 14px; color: #64748b; }
-    </style>
-</head>
-<body>
-
-    <div id="ton-connect-button"></div>
-    <button id="pay-btn" class="btn-pay">PAY 1 TON TO JOIN</button>
-    <div class="footer">DECENTRALIZED MATRIX SYSTEM</div>
-
-    <script>
-        // FINAL CONFIGURATION - DO NOT CHANGE
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-button'
-        });
-
-        // Toggle Payment Button
-        tonConnectUI.onStatusChange(wallet => {
-            const payBtn = document.getElementById('pay-btn');
-            payBtn.style.display = wallet ? 'block' : 'none';
-        });
-
-        // Payment Logic
-        async function sendTON() {
-            const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 360,
                 messages: [
                     {
