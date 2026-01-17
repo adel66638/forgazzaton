@@ -5,7 +5,7 @@
   "iconUrl": "https://forgazzaton.vercel.app/logo.png",
   "icons": [
     {
-      "src": "https://forgazzaton.vercel.app/favicon.png",
+      "src": "https://forgazzaton.vercel.app/logo.png",
       "sizes": "192x192",
       "type": "image/png"
     }
@@ -17,9 +17,7 @@
   "default_wallets": [
     "tonkeeper",
     "tonhub",
-    "mytonwallet",
-    "web",
-    "openmask"
+    "mytonwallet"
   ],
   "bridge_url": "https://bridge.tonapi.io",
   "network": {
