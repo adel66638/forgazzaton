@@ -1,9 +1,11 @@
 {
-  "name": "FortonFreeGazza",
+  "url": "https://forgazzaton.vercel.app",
+  "name": "FORGAZZATON",
   "description": "A Fully Automated Charity Smart Contract on TON. Donate TON safely and transparently.",
+  "iconUrl": "https://forgazzaton.vercel.app/logo.png",
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "https://forgazzaton.vercel.app/favicon.png",
       "sizes": "192x192",
       "type": "image/png"
     }
