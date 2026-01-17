@@ -1,4 +1,27 @@
 {
-  "url": "https://forgazzaton.vercel.app",
-  "name": "FORGAZZATON",
-  "iconUrl":"https://zzaton.vercel.app/favicon.ico"
+  "name": "FortonFreeGazza",
+  "description": "A Fully Automated Charity Smart Contract on TON. Donate TON safely and transparently.",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#2E8B57",
+  "background_color": "#ffffff",
+  "default_wallets": [
+    "tonkeeper",
+    "tonhub",
+    "mytonwallet",
+    "web",
+    "openmask"
+  ],
+  "bridge_url": "https://bridge.tonapi.io",
+  "network": {
+    "server": "mainnet",
+    "name": "TON Mainnet"
+  }
+}
