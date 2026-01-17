@@ -7,60 +7,74 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         :root { --primary: #1aed1a; --gold: #ffd700; --dark: #0a0a0a; }
-        body { background: var(--dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .card { border: 1px solid var(--primary); padding: 40px; border-radius: 30px; background: rgba(255,255,255,0.03); width: 90%; max-width: 420px; box-shadow: 0 0 40px rgba(26,237,26,0.15); border: 1px solid rgba(26,237,26,0.3); }
-        h1 { color: var(--gold); font-size: 32px; margin-bottom: 5px; letter-spacing: 2px; }
-        .tagline { color: #aaa; font-size: 14px; margin-bottom: 25px; }
-        .stats { background: rgba(26,237,26,0.08); padding: 15px; border-radius: 15px; margin: 20px 0; text-align: left; font-size: 15px; }
+        body { background: var(--dark); color: white; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { border: 1px solid var(--primary); padding: 30px; border-radius: 20px; background: rgba(0,0,0,0.8); text-align: center; max-width: 400px; width: 90%; box-shadow: 0 0 20px rgba(26,237,26,0.2); }
+        h1 { color: var(--gold); font-size: 32px; margin-bottom: 10px; }
+        .tagline { color: #aaa; font-size: 14px; margin-bottom: 30px; }
+        .stats { background: rgba(26,237,26,0.08); padding: 20px; border-radius: 15px; margin-bottom: 25px; }
         .stats div { margin: 8px 0; display: flex; justify-content: space-between; }
-        #ton-connect-button { display: flex; justify-content: center; margin: 30px 0; }
-        .btn-pay { background: linear-gradient(45deg, var(--primary), #0b9e0b); color: black; border: none; padding: 20px; border-radius: 15px; font-weight: bold; cursor: pointer; display: none; width: 100%; font-size: 18px; text-transform: uppercase; transition: 0.3s; }
-        .btn-pay:hover { transform: scale(1.02); box-shadow: 0 5px 20px rgba(26,237,26,0.4); }
+        #ton-connect-button { display: flex; justify-content: center; margin-bottom: 20px; }
+        .btn-pay { 
+            background: linear-gradient(45deg, var(--primary), #0cb30c);
+            color: black; border: none; padding: 15px 30px; border-radius: 10px;
+            font-weight: bold; cursor: pointer; width: 100%; font-size: 16px;
+            display: none; /* سيظهر فقط بعد ربط المحفظة */
+        }
         .footer { margin-top: 30px; font-size: 10px; color: #555; letter-spacing: 2px; }
     </style>
 </head>
 <body>
+
     <div class="card">
         <h1>FORGAZZATON</h1>
         <div class="tagline">Empowering Gaza through TON Blockchain</div>
-        
+
         <div class="stats">
             <div><span>Entry Cost:</span> <strong>1 TON</strong></div>
-            <div><span>Referral Bonus:</span> <strong>50% (Instant)</strong></div>
+            <div><span>Referral Bonus:</span> <strong>50%</strong></div>
             <div><span>Charity (Gaza):</span> <strong>10%</strong></div>
         </div>
 
         <div id="ton-connect-button"></div>
-        <button id="pay-btn" class="btn-pay" onclick="sendTON()">Activate Level 1</button>
-        
+        <button id="pay-btn" class="btn-pay">PAY 1 TON TO JOIN</button>
+
         <div class="footer">DECENTRALIZED MATRIX SYSTEM</div>
     </div>
 
     <script>
-        const tonConnectUI = new TONConnectUI.TonConnectUI({
-            manifestUrl: 'https://raw.githubusercontent.com/ton-community/tutorials/main/03-client/test/public/tonconnect-manifest.json',
+        // إعداد واجهة المحفظة باستخدام الرابط الصحيح
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://fortogazza.netlify.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button'
         });
 
+        // مراقبة حالة المحفظة لإظهار زر الدفع
         tonConnectUI.onStatusChange(wallet => {
-            if (wallet) document.getElementById('pay-btn').style.display = 'block';
+            const payBtn = document.getElementById('pay-btn');
+            payBtn.style.display = wallet ? 'block' : 'none';
         });
 
+        // وظيفة إرسال الأموال لمحفظتك
         async function sendTON() {
             const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 60,
-                messages: [{ 
-                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
-                    amount: "1000000000" 
-                }]
+                validUntil: Math.floor(Date.now() / 1000) + 300,
+                messages: [
+                    {
+                        address: "UQBufh61LHE5H1NDJXqWRIVCX-fW9m6L9mEUP-I4hM_rR3N4",
+                        amount: "1000000000" // 1 TON
+                    }
+                ]
             };
-            try { 
-                await tonConnectUI.sendTransaction(transaction); 
-                alert("Transaction Sent! Welcome to the Matrix."); 
-            } catch (e) { 
-                alert("Transaction Failed or Cancelled."); 
+
+            try {
+                await tonConnectUI.sendTransaction(transaction);
+                alert("تم إرسال المعاملة بنجاح!");
+            } catch (e) {
+                alert("تم إلغاء العملية أو حدث خطأ.");
             }
         }
+
+        document.getElementById('pay-btn').onclick = sendTON;
     </script>
 </body>
 </html>
