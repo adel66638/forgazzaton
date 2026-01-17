@@ -3,69 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة دفع TON | الرسمية</title>
+    <title>FORGAZZATON | المصفوفة الذكية</title>
     
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     
     <style>
-        :root { --main-blue: #0088cc; --bg-dark: #0e1621; --card-bg: #1b2633; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-dark); color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: var(--card-bg); padding: 35px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); text-align: center; width: 90%; max-width: 400px; border: 1px solid #2c3b4d; }
-        h2 { margin: 0 0 10px; font-size: 24px; color: var(--main-blue); }
-        p { color: #8a99a8; margin-bottom: 25px; line-height: 1.5; }
-        #ton-connect-button { display: flex; justify-content: center; margin-bottom: 25px; }
-        .btn-send { background: linear-gradient(45deg, #0088cc, #00aaff); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 18px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,136,204,0.3); }
-        .btn-send:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,136,204,0.5); }
-        .btn-send:active { transform: translateY(0); }
-        .footer-note { margin-top: 20px; font-size: 12px; color: #5a6b7d; }
+        :root {
+            --primary-green: #00d084;
+            --dark-bg: #0a0b10;
+            --card-bg: #161b22;
+            --text-gray: #8b949e;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            background-image: radial-gradient(circle at top right, #00d08410, transparent),
+                              radial-gradient(circle at bottom left, #00d08405, transparent);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 450px;
+            perspective: 1000px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 28px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-area {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-green), #0088cc);
+            border-radius: 22px;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(0,208,132,0.2);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: 1px;
+            color: #fff;
+        }
+
+        .subtitle {
+            color: var(--primary-green);
+            font-size: 14px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 30px;
+            display: block;
+        }
+
+        #ton-connect-button {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 30px;
+            border: 1px dashed #30363d;
+        }
+
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: var(--text-gray);
+        }
+
+        .btn-pay {
+            background: var(--primary-green);
+            color: #000;
+            border: none;
+            padding: 18px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none; /* يظهر فقط بعد الربط */
+        }
+
+        .btn-pay:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,208,132,0.4);
+            filter: brightness(1.1);
+        }
+
+        .footer {
+            margin-top: 25px;
+            font-size: 11px;
+            color: var(--text-gray);
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>بوابة دفع TON</h2>
-        <p>اربط محفظتك (Tonkeeper, MyTonWallet) لتنفيذ المعاملة بأمان.</p>
-        
-        <div id="ton-connect-button"></div>
-        
-        <button class="btn-send" id="send-btn">إرسال 0.1 TON</button>
-        
-        <div class="footer-note">العملية تتم عبر بروتوكول TonConnect المشفر</div>
+    <div class="container">
+        <div class="card">
+            <div class="logo-area">F</div>
+            <h1>FORGAZZATON</h1>
+            <span class="subtitle">Smart Matrix System</span>
+
+            <div class="info-box">
+                <p>تكلفة الدخول للمستوى الأول</p>
+                <p style="color: white; font-size: 20px; font-weight: bold;">1.00 TON</p>
+            </div>
+            
+            <div id="ton-connect-button"></div>
+            
+            <button class="btn-pay" id="main-pay-btn">تفعيل المصفوفة الآن</button>
+            
+            <div class="footer">
+                نظام آلي بالكامل عبر شبكة TON <br>
+                جميع المعاملات مشفرة وآمنة
+            </div>
+        </div>
     </div>
 
     <script>
-        // 1. تهيئة الواجهة والربط
+        // 1. تهيئة الربط مع المانيفست الخاص بك
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://raw.githubusercontent.com/ton-connect/demo-dapp-with-react/master/public/tonconnect-manifest.json',
+            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button'
         });
 
-        // 2. معالجة زر الإرسال
-        document.getElementById('send-btn').onclick = async () => {
-            // التحقق من الاتصال
-            if (!tonConnectUI.connected) {
-                alert("الرجاء الضغط على زر Connect Wallet أولاً");
-                return;
+        // 2. التحكم في ظهور الزر بناءً على حالة الاتصال
+        tonConnectUI.onStatusChange(wallet => {
+            const payBtn = document.getElementById('main-pay-btn');
+            if (wallet) {
+                payBtn.style.display = 'block';
+            } else {
+                payBtn.style.display = 'none';
             }
+        });
 
-            // تفاصيل المعاملة (مأخوذة من لقطة الشاشة الخاصة بك)
+        // 3. تنفيذ المعاملة عند الضغط على الزر
+        document.getElementById('main-pay-btn').onclick = async () => {
             const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 360, // صلاحية المعاملة 6 دقائق
+                validUntil: Math.floor(Date.now() / 1000) + 360,
                 messages: [
                     {
-                        address: "t4iKHyyoXD0Spm8N9navPx", // عنوان محفظتك
-                        amount: "100000000" // القيمة: 0.1 TON
+                        address: "UQBufh61LHE5H1NDJXqWRIVCX-fW9m6L9mEUP-I4hM_rR3N4", // عنوان محفظتك المعتمد
+                        amount: "1000000000" // القيمة 1 TON
                     }
                 ]
             };
 
             try {
-                const result = await tonConnectUI.sendTransaction(transaction);
-                console.log("Success:", result);
-                alert("تم إرسال طلب المعاملة لمحفظتك بنجاح!");
+                await tonConnectUI.sendTransaction(transaction);
+                alert("تهانينا! تم إرسال طلب التفعيل بنجاح.");
             } catch (e) {
-                console.error("Error:", e);
-                alert("حدث خطأ: تأكد من وجود رصيد كافٍ أو أنك لم تلغِ العملية.");
+                alert("تم إلغاء العملية أو حدث خطأ في الشبكة.");
             }
         };
     </script>
