@@ -3,93 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE FREE | Home</title>
+    <title>Dashboard | FF FORTONE FREE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    
     <style>
-        /* الحفاظ على هويتك البصرية */
         body { font-family: 'Inter', sans-serif; background-color: #010413; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .neon-glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        /* طبقة الحماية - تختفي فور التأكد من الدفع */
+        #gatekeeper { position: fixed; inset: 0; background: #010413; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-6">
+<body>
 
-    <header class="fixed top-0 w-full max-w-7xl flex justify-between items-center p-6 z-50">
-        <div class="flex items-center gap-2 font-black text-2xl italic">
-            <span class="text-blue-500 font-black">FF</span>
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-8 h-8">
-            <span class="font-black">FORTONE</span>
-        </div>
-        <div id="ton-connect-btn"></div>
-    </header>
+    <div id="gatekeeper">
+        <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-16 h-16 mb-4 animate-pulse">
+        <h2 class="text-xl font-black mb-2 uppercase italic text-blue-500">Verifying Membership...</h2>
+        <div id="ton-connect-check"></div>
+    </div>
 
-    <main class="text-center mt-20 relative">
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] -z-10"></div>
+    <div id="dashboardContent" style="display: none;">
+        <header class="max-w-7xl mx-auto flex justify-between items-center p-6 glass rounded-[2rem] mt-4">
+            <div class="flex items-center gap-3 font-black text-xl italic uppercase">
+                <span class="text-blue-500">FF</span>
+                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-8 h-8">
+                <span>FORTONE</span>
+            </div>
+            <div id="ton-connect-main"></div>
+        </header>
 
-        <h1 class="text-6xl font-[900] uppercase mb-4 tracking-tighter italic">FF <span class="text-blue-500">FORTONE</span> FREE</h1>
-        <p class="text-gray-400 mb-12 max-w-md mx-auto italic font-bold">Build your decentralized squad and unlock rewards across 20 professional levels.</p>
+        <main class="max-w-7xl mx-auto mt-10 p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
+                <div class="glass p-6 rounded-3xl border-b-4 border-blue-500">
+                    <p class="text-[10px] text-gray-500 font-black mb-1 uppercase">Project Balance (80%)</p>
+                    <p class="text-2xl font-black italic">0.00 TON</p>
+                </div>
+                <div class="glass p-6 rounded-3xl border-b-4 border-green-500">
+                    <p class="text-[10px] text-gray-500 font-black mb-1 uppercase tracking-widest">Savings (15%)</p>
+                    <p class="text-2xl font-black italic text-green-400">0.00 TON</p>
+                </div>
+                <div class="glass p-6 rounded-3xl border-b-4 border-yellow-500">
+                    <p class="text-[10px] text-gray-500 font-black mb-1 uppercase tracking-widest">Squad Members</p>
+                    <p class="text-2xl font-black italic text-yellow-500">0 Members</p>
+                </div>
+            </div>
 
-        <div class="glass p-10 rounded-[2.5rem] border-t-2 border-blue-500/40 w-full max-w-sm neon-glow">
-            <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-2 italic">Entry Ticket</p>
-            <p class="text-5xl font-black mb-8 italic">1.00 <span class="text-sm text-blue-500">TON</span></p>
-            
-            <button onclick="handleActivation()" class="w-full py-5 rounded-2xl bg-blue-600 hover:bg-blue-500 font-[900] text-sm uppercase tracking-widest transition-all transform active:scale-95 shadow-xl shadow-blue-600/20">
-                Activate Account Now
-            </button>
-            <p class="text-[9px] text-gray-600 mt-4 uppercase font-bold tracking-tighter italic">Instant Activation • Secure P2P</p>
-        </div>
-    </main>
+            <h2 class="text-2xl font-black mb-6 uppercase italic tracking-tighter">Profit Levels (20)</h2>
+            <div id="levelsGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        </main>
+    </div>
 
     <script>
-        // إعدادات المحفظة
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn'
+            buttonRootId: 'ton-connect-main'
         });
 
-        // --- الخطوة 2: الدالة التي تربط الدفع بفتح القفل ---
-        async function handleActivation() {
-            try {
-                // التأكد من الاتصال
-                if (!tonConnectUI.connected) {
-                    await tonConnectUI.openModal();
-                    return;
+        const gateUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-check'
+        });
+
+        // --- وظيفة "الذاكرة" لفتح القفل ---
+        async function checkAccess() {
+            const wallet = tonConnectUI.wallet;
+            if (wallet) {
+                const address = wallet.account.address;
+                // فحص هل يوجد اشتراك مسجل لهذا العنوان في المتصفح؟
+                const isActive = localStorage.getItem('user_is_active_' + address);
+
+                if (isActive === 'true') {
+                    // فتح الداشبورد فوراً وإخفاء القفل
+                    document.getElementById('gatekeeper').style.display = 'none';
+                    document.getElementById('dashboardContent').style.display = 'block';
+                } else {
+                    // إذا لم يدفع، نعيده لصفحة الاشتراك
+                    alert("Account NOT Active. Redirecting...");
+                    window.location.href = 'index.html';
                 }
-
-                const walletAddress = tonConnectUI.wallet.account.address;
-
-                // إعداد المعاملة
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 60,
-                    messages: [{
-                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // محفظتك
-                        amount: "1000000000" // 1 TON
-                    }]
-                };
-
-                // إرسال الطلب والانتظار (هنا السر)
-                const result = await tonConnectUI.sendTransaction(transaction);
-
-                // إذا أكد المستخدم الدفع في المحفظة
-                if (result) {
-                    // تسجيل "مفتاح النجاح" في ذاكرة المتصفح
-                    localStorage.setItem('user_is_active_' + walletAddress, 'true');
-                    
-                    // تنبيه النجاح
-                    alert("Success! Your account is now active. Redirecting to Dashboard...");
-                    
-                    // الانتقال تلقائياً للداشبورد (القفل سيختفي الآن)
-                    window.location.href = 'dashboard.html';
-                }
-
-            } catch (e) {
-                console.error("Payment failed", e);
-                alert("The transaction was not confirmed. Please try again.");
             }
         }
+
+        // مراقبة حالة المحفظة
+        tonConnectUI.onStatusChange(wallet => { if (wallet) checkAccess(); });
+
+        // بناء المستويات (عملك السابق دون تغيير)
+        const grid = document.getElementById('levelsGrid');
+        for (let i = 1; i <= 20; i++) {
+            let price = i === 1 ? 1 : (i - 1) * 2;
+            grid.innerHTML += `
+                <div class="glass p-6 rounded-[2rem] text-center border border-white/5 relative">
+                    <span class="absolute top-4 right-4 text-[8px] font-black text-blue-500 italic uppercase">LVL ${i}</span>
+                    <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-8 h-8 mx-auto mb-4 opacity-20">
+                    <p class="text-xl font-black italic mb-4 tracking-tighter">${price} TON</p>
+                    <button class="w-full py-2 rounded-xl text-[10px] font-[900] ${i===1?'bg-green-600/20 text-green-400 border border-green-500/20':'bg-blue-600 hover:bg-blue-500 uppercase italic'}">
+                        ${i===1?'ACTIVE':'UPGRADE'}
+                    </button>
+                </div>
+            `;
+        }
+
+        // تشغيل الفحص عند الدخول
+        checkAccess();
     </script>
 </body>
 </html>
