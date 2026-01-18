@@ -3,63 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | FORGAZZATON</title>
+    <title>FFFortone Free Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #00d084; --bg: #0a0b10; --card: #161b22; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding: 15px; display: none; } /* مخفي حتى يتم التحقق */
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--card); border-radius: 15px; border: 1px solid #30363d; }
-        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .box { background: var(--card); padding: 15px; border-radius: 15px; border: 1px solid #30363d; text-align: center; }
-        .box h4 { margin: 0; font-size: 12px; color: #8b949e; }
-        .box p { margin: 10px 0 0; font-size: 18px; font-weight: bold; color: var(--accent); }
-        .ref-area { background: var(--card); margin-top: 15px; padding: 20px; border-radius: 15px; border: 1px dashed var(--accent); }
-        .link-text { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 11px; margin: 10px 0; word-break: break-all; color: var(--accent); }
-        .btn-copy { background: var(--accent); color: black; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        body { font-family: 'Cairo', sans-serif; }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-white p-4">
 
-    <div class="header">
+    <header class="flex justify-between items-center mb-6 bg-slate-900 p-4 rounded-2xl border border-blue-500/30">
         <div>
-            <h3 style="margin:0;">FORGAZZATON</h3>
-            <span id="myID" style="color: var(--accent); font-weight: bold;">ID: #------</span>
+            <h1 class="text-xl font-black text-blue-500 uppercase">FFFortone Free</h1>
         </div>
-        <div style="font-size: 12px; border: 1px solid var(--accent); padding: 3px 10px; border-radius: 10px;">نشط</div>
+        <div class="text-left bg-blue-600/20 px-4 py-1 rounded-full border border-blue-500">
+            <span class="text-sm font-bold text-blue-400">0.00 TON</span>
+        </div>
+    </header>
+
+    <div class="bg-gradient-to-l from-blue-900/40 to-slate-900 p-5 rounded-2xl mb-6 border-r-4 border-blue-600">
+        <p class="text-xs text-gray-400 mb-2 font-bold">رابط الإحالة (Referral)</p>
+        <div class="flex gap-2">
+            <input id="refLink" type="text" value="https://forgazzaton.vercel.app/" class="w-full bg-black/40 p-2 rounded-lg text-xs outline-none border border-white/10" readonly>
+            <button onclick="copyLink()" class="bg-blue-600 px-4 py-2 rounded-lg text-xs font-bold">نسخ</button>
+        </div>
     </div>
 
-    <div class="stats">
-        <div class="box"><h4>أرباحك (TON)</h4><p>0.00</p></div>
-        <div class="box"><h4>المستوى</h4><p>1</p></div>
-        <div class="box"><h4>المبشرين</h4><p>0</p></div>
-        <div class="box"><h4>الفريق</h4><p>0</p></div>
+    <div class="grid grid-cols-2 gap-3 mb-8">
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-center">
+            <p class="text-[10px] text-gray-400">فريق مباشر</p>
+            <p class="text-xl font-bold">0</p>
+        </div>
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-center">
+            <p class="text-[10px] text-gray-400">فريق غير مباشر</p>
+            <p class="text-xl font-bold">0</p>
+        </div>
     </div>
 
-    <div class="ref-area">
-        <h4 style="margin:0; text-align: center;">رابط الإحالة الخاص بك</h4>
-        <div class="link-text" id="refLink">جاري التحميل...</div>
-        <button class="btn-copy" onclick="copyLink()">نسخ الرابط</button>
-    </div>
+    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+        <span class="w-1.5 h-5 bg-blue-600 rounded-full"></span>
+        مستويات الأرباح (20 مستوى)
+    </h2>
+
+    <div id="levels-container" class="grid grid-cols-2 gap-3">
+        </div>
 
     <script>
-        window.onload = function() {
-            const isPaid = localStorage.getItem('isPaid');
-            const wallet = localStorage.getItem('userWallet');
-
-            // إذا لم يدفع، يطرده لصفحة البداية
-            if (isPaid !== 'true') {
-                window.location.href = "index.html";
-            } else {
-                document.body.style.display = "block"; // إظهار الصفحة للمدفعين فقط
-                const userID = Math.abs(wallet.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0) % 1000000);
-                
-                document.getElementById('myID').innerText = "ID: #" + userID;
-                document.getElementById('refLink').innerText = "https://forgazzaton.vercel.app/?ref=" + userID;
-            }
-        };
+        // توليد المستويات برمجياً
+        const container = document.getElementById('levels-container');
+        for (let i = 1; i <= 20; i++) {
+            let price = i === 1 ? 'Free' : (i - 1) * 2 + ' TON';
+            let color = i === 1 ? 'bg-green-600' : 'bg-slate-800';
+            
+            container.innerHTML += `
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl relative overflow-hidden group hover:border-blue-500 transition-all">
+                    <div class="absolute top-0 right-0 bg-blue-600 text-[9px] px-2 py-0.5 rounded-bl-lg font-bold">LVL ${i}</div>
+                    <div class="text-center mt-2">
+                        <p class="text-lg font-black">${price}</p>
+                        <button class="w-full mt-3 py-1.5 rounded-lg text-[10px] font-bold ${color}">${i === 1 ? 'مفعّل' : 'تفعيل'}</button>
+                    </div>
+                </div>
+            `;
+        }
 
         function copyLink() {
-            const link = document.getElementById('refLink').innerText;
-            navigator.clipboard.writeText(link).then(() => alert("تم النسخ!"));
+            let copyText = document.getElementById("refLink");
+            copyText.select();
+            document.execCommand("copy");
+            alert("تم نسخ الرابط!");
         }
     </script>
 </body>
