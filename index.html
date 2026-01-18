@@ -12,7 +12,6 @@
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .hero-gradient { background: radial-gradient(circle at center, #1e40af 0%, #010413 75%); }
         .ton-3d { width: 80px; height: 80px; filter: drop-shadow(0 0 15px rgba(0, 152, 234, 0.6)); display: inline-block; vertical-align: middle; margin: 0 15px; }
-        .ton-3d-sm { width: 30px; height: 30px; filter: drop-shadow(0 0 8px rgba(0, 152, 234, 0.4)); vertical-align: middle; margin-right: 8px; }
     </style>
 </head>
 <body class="text-white overflow-x-hidden">
@@ -20,111 +19,92 @@
     <div class="fixed inset-0 hero-gradient -z-10 opacity-60"></div>
 
     <nav class="flex justify-between items-center p-6 max-w-7xl mx-auto">
-        <div class="text-2xl font-black text-white italic flex items-center tracking-tighter">
+        <div class="text-2xl font-black text-white italic flex items-center tracking-tighter uppercase">
             <span class="text-blue-500">FF</span> 
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="ton-3d-sm" alt="TON"> 
+            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-8 h-8 mx-2" alt="TON"> 
             FORTONE
         </div>
         <div id="ton-connect-btn"></div>
     </nav>
 
-    <main class="flex flex-col items-center justify-center min-h-[85vh] text-center px-4">
-        <div class="mb-8 inline-block bg-blue-500/10 py-2 px-5 rounded-full border border-blue-500/30 text-blue-400 text-[10px] font-black tracking-[0.3em] uppercase">
-            ⚡ Powered by TON Blockchain Technology
-        </div>
-        
-        <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tighter flex flex-wrap justify-center items-center">
-            FF 
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="ton-3d md:w-[100px] md:h-[100px] animate-pulse" alt="TON 3D"> 
-            FORTONE FREE
+    <main class="flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
+        <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tighter uppercase italic">
+            FF <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="ton-3d animate-pulse"> FORTONE
         </h1>
 
-        <p class="max-w-xl text-gray-400 text-lg mb-12 leading-relaxed font-medium opacity-80">
-            Build your decentralized squad and unlock rewards across 20 professional levels on the fastest network.
-        </p>
-
-        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl relative overflow-hidden group">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
-            
-            <div class="flex justify-between items-center mb-10 text-left">
-                <div>
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl border-blue-500/20">
+            <div class="flex justify-between items-center mb-10">
+                <div class="text-left">
                     <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">Entry Ticket</p>
-                    <p class="text-4xl font-black">1.00 <span class="text-blue-500 text-xl font-bold">TON</span></p>
+                    <p class="text-4xl font-black italic">1.00 <span class="text-blue-500 text-xl">TON</span></p>
                 </div>
-                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-14 h-14 drop-shadow-2xl" alt="TON">
+                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-14 h-14">
             </div>
 
-            <button id="mainActionButton" onclick="handleMainAction()" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-sm shadow-[0_15px_30px_rgba(37,99,235,0.3)] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-4 uppercase tracking-widest">
-                <span id="buttonText">Start Earning Now</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
+            <button id="mainActionButton" onclick="handleMainAction()" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-sm uppercase italic tracking-widest transition-all shadow-[0_15px_30px_rgba(37,99,235,0.3)]">
+                <span id="buttonText">Connect Wallet</span>
             </button>
         </div>
     </main>
 
     <script>
+        // إعداد الاتصال مع دعم كامل للهواتف
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn'
+            buttonRootId: 'ton-connect-btn',
+            uiOptions: {
+                twaReturnUrl: 'https://t.me/your_bot' // اختياري: إذا كان لديك بوت تلجرام
+            }
         });
 
-        // تحديث نص الزر بناءً على حالة المحفظة والدفع
+        // مراقبة الحالة وتغيير نص الزر
         tonConnectUI.onStatusChange(wallet => {
             const btnText = document.getElementById('buttonText');
             if (wallet) {
                 const address = wallet.account.address;
                 const hasPaid = localStorage.getItem('user_paid_' + address);
-                btnText.innerText = hasPaid ? "Go to Dashboard" : "Pay 1 TON to Join";
+                btnText.innerText = hasPaid ? "Open Dashboard" : "Pay 1 TON to Join";
             } else {
-                btnText.innerText = "Connect Wallet to Start";
+                btnText.innerText = "Connect Wallet";
             }
         });
 
         async function handleMainAction() {
+            // 1. إذا لم تكن متصلة، افتح نافذة الربط
             if (!tonConnectUI.connected) {
-                await tonConnectUI.connectWallet();
+                await tonConnectUI.openModal();
                 return;
             }
 
             const address = tonConnectUI.wallet.account.address;
-            const hasPaid = localStorage.getItem('user_paid_' + address);
 
-            if (hasPaid === 'true') {
+            // 2. إذا دفع مسبقاً، افتح الداشبورد
+            if (localStorage.getItem('user_paid_' + address)) {
                 window.location.href = 'dashboard.html';
                 return;
             }
 
-            // إعداد المعاملة بالعناوين التي زودتني بها
+            // 3. عملية الدفع (محسنة للهاتف)
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 360,
-                messages: [
-                    {
-                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // محفظة المشروع
-                        amount: "1000000000" // 1 TON
-                    }
-                ]
+                messages: [{
+                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // محفظة المشروع
+                    amount: "1000000000" // 1 TON
+                }]
             };
 
             try {
+                // فتح المحفظة مباشرة للدفع
                 const result = await tonConnectUI.sendTransaction(transaction);
+                
                 if (result) {
                     localStorage.setItem('user_paid_' + address, 'true');
-                    alert("Welcome! Payment Successful.");
                     window.location.href = 'dashboard.html';
                 }
             } catch (e) {
-                console.error(e);
-                alert("Payment was not completed. Please ensure you have enough balance for fees.");
+                alert("Payment Pending: Please confirm in your wallet and return here.");
             }
         }
     </script>
-
-    <footer class="mt-20 py-12 text-center border-t border-white/5">
-        <p class="text-gray-600 text-[9px] font-black tracking-[0.4em] uppercase">
-            &copy; 2026 FF FORTONE FREE • Secured by TON
-        </p>
-    </footer>
-
 </body>
-                        </html>
+</html>
