@@ -64,13 +64,12 @@
     </main>
 
     <script>
-        // 1. إعداد TonConnect
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-btn'
         });
 
-        // 2. تحديث نص الزر بناءً على الحالة
+        // تحديث نص الزر بناءً على حالة المحفظة والدفع
         tonConnectUI.onStatusChange(wallet => {
             const btnText = document.getElementById('buttonText');
             if (wallet) {
@@ -82,9 +81,7 @@
             }
         });
 
-        // 3. الوظيفة الرئيسية عند ضغط الزر
         async function handleMainAction() {
-            // أ. إذا لم تكن المحفظة متصلة
             if (!tonConnectUI.connected) {
                 await tonConnectUI.connectWallet();
                 return;
@@ -93,19 +90,18 @@
             const address = tonConnectUI.wallet.account.address;
             const hasPaid = localStorage.getItem('user_paid_' + address);
 
-            // ب. إذا كان قد دفع مسبقاً -> اذهب للداشبورد
             if (hasPaid === 'true') {
-                window.location.href = 'dashboard.html'; // تأكد أن اسم ملف الداشبورد صح
+                window.location.href = 'dashboard.html';
                 return;
             }
 
-            // ج. إذا لم يدفع -> اطلب المعاملة
+            // إعداد المعاملة بالعناوين التي زودتني بها
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 360,
                 messages: [
                     {
-                        address: "ضع_عنوان_محفظتك_هنا_هنا", // <--- استبدل هذا بعنوانك الحقيقي
-                        amount: "1000000000", // 1 TON
+                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // محفظة المشروع
+                        amount: "1000000000" // 1 TON
                     }
                 ]
             };
@@ -114,11 +110,12 @@
                 const result = await tonConnectUI.sendTransaction(transaction);
                 if (result) {
                     localStorage.setItem('user_paid_' + address, 'true');
-                    alert("Welcome! Redirecting to Dashboard...");
+                    alert("Welcome! Payment Successful.");
                     window.location.href = 'dashboard.html';
                 }
             } catch (e) {
-                alert("Payment was not completed.");
+                console.error(e);
+                alert("Payment was not completed. Please ensure you have enough balance for fees.");
             }
         }
     </script>
@@ -130,4 +127,4 @@
     </footer>
 
 </body>
-</html>
+                        </html>
