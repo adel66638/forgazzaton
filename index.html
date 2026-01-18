@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FORTUNE FREE | 20 Levels Matrix</title>
+    <title>FORTUNE FREE | TON Matrix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -13,7 +13,6 @@
         .card-glass { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
         .card-glass:hover { border-color: #0098ea; background: rgba(0, 152, 234, 0.04); transform: translateY(-5px); }
         .levels-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
-        .copy-success { color: #10b981; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -21,45 +20,31 @@
 
     <nav class="relative z-10 max-w-7xl mx-auto px-6 py-8 flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <div class="w-12 h-12 ton-bg rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-xl shadow-[#0098ea]/20">FF</div>
+            <div class="w-12 h-12 ton-bg rounded-2xl flex items-center justify-center font-black text-xl text-white">FF</div>
             <span class="text-2xl font-black italic tracking-tighter uppercase">FORTUNE <span class="text-[#0098ea]">FREE</span></span>
         </div>
-        <button onclick="connectWallet()" class="ton-bg px-6 py-3 rounded-2xl font-bold text-sm shadow-lg flex items-center gap-2 transition hover:scale-105 active:scale-95 text-white">
+        <button onclick="connectWallet()" class="ton-bg px-6 py-3 rounded-2xl font-bold text-sm shadow-lg flex items-center gap-2 text-white">
             <i data-lucide="wallet" class="w-4 h-4"></i> <span id="btnText">Connect Wallet</span>
         </button>
     </nav>
 
     <main class="relative z-10 max-w-7xl mx-auto px-6 pb-20">
-        
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 text-left">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
             <div class="lg:col-span-2 card-glass p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="flex items-center gap-4">
-                    <div class="p-4 bg-blue-500/10 rounded-2xl text-[#0098ea]"><i data-lucide="link"></i></div>
-                    <div>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-right">Your Referral Link</p>
-                        <p id="refLink" class="text-sm font-mono text-blue-400 truncate w-48 md:w-full">https://forgazzaton.vercel.app/join?id=8291</p>
-                    </div>
+                <div>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Main Registration Wallet</p>
+                    <p class="text-xs font-mono text-blue-400 truncate w-64">UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx</p>
                 </div>
-                <div class="flex gap-2 w-full md:w-auto">
-                    <button onclick="copyLink()" class="flex-1 bg-white/5 hover:bg-white/10 px-6 py-4 rounded-2xl text-xs font-bold transition">Copy</button>
-                    <button onclick="buyLevel('Registration', 1)" class="flex-1 ton-bg px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-lg">Join (1 TON)</button>
-                </div>
+                <button onclick="handlePayment('Registration', 1)" class="ton-bg px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-blue-500/20 shadow-lg">Join (1 TON)</button>
             </div>
-            
-            <div class="card-glass p-8 rounded-[2.5rem] flex items-center justify-around">
-                <div class="text-center">
-                    <p class="text-[10px] text-slate-500 font-bold uppercase">Partners</p>
-                    <div class="text-3xl font-black italic">0</div>
-                </div>
-                <div class="text-center">
-                    <p class="text-[10px] text-slate-500 font-bold uppercase">Total Income</p>
-                    <div class="text-3xl font-black text-green-400">0.0 <span class="text-xs font-normal">TON</span></div>
-                </div>
+            <div class="card-glass p-8 rounded-[2.5rem] flex flex-col justify-center">
+                <p class="text-[10px] text-slate-500 font-bold uppercase mb-2">Referral Reward</p>
+                <p class="text-2xl font-black text-[#0098ea]">40% <span class="text-xs text-slate-400 font-normal">To Partner</span></p>
             </div>
         </div>
 
         <div class="flex items-center gap-4 mb-8">
-            <h2 class="text-xl font-black italic uppercase tracking-tighter text-[#0098ea]">Matrix Levels (2x2)</h2>
+            <h2 class="text-xl font-black italic uppercase text-[#0098ea]">Levels (Smart Split 50/10/40)</h2>
             <div class="h-px flex-1 bg-white/5"></div>
         </div>
 
@@ -67,48 +52,48 @@
     </main>
 
     <script>
-        // Initialize Icons
         lucide.createIcons();
+        const mainWallet = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx";
+        const gasWallet = "UQBdgfwe8zbfSzhIy__hM8tR1VcJG-styXU30yq4kQVN0F-i";
 
-        // Matrix Generation (20 Levels)
+        // Generate Prices: First 6 levels are simple, then moderate increase
+        function getPrice(i) {
+            if (i <= 6) return i * 2; 
+            return Math.floor(12 + (i - 6) * 15);
+        }
+
         const container = document.getElementById('levelsContainer');
-        
-        // Starting Price: Level 1 = 2 TON, then doubles
-        let price = 2;
-
         for (let i = 1; i <= 20; i++) {
+            let price = getPrice(i);
             container.innerHTML += `
-                <div class="card-glass p-8 rounded-[2.5rem] text-center relative group overflow-hidden cursor-pointer">
-                    <div class="absolute top-4 right-4 text-slate-800"><i data-lucide="lock" class="w-4 h-4"></i></div>
-                    <p class="text-[10px] text-slate-600 font-bold mb-2 uppercase">Level ${i}</p>
-                    <p class="text-3xl font-black mb-1 group-hover:text-[#0098ea] transition-colors">${price.toLocaleString()}</p>
-                    <p class="text-[#0098ea] font-bold text-xs mb-6 italic font-mono">TON</p>
-                    <button onclick="buyLevel(${i}, ${price})" class="w-full py-3 bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#0098ea] hover:text-white transition-all shadow-xl shadow-black">Activate</button>
+                <div class="card-glass p-8 rounded-[2.5rem] text-center relative group">
+                    <p class="text-[10px] text-slate-600 font-bold mb-2">LEVEL ${i}</p>
+                    <p class="text-3xl font-black mb-1 group-hover:text-[#0098ea] transition-colors">${price}</p>
+                    <p class="text-[#0098ea] font-bold text-xs mb-6 font-mono font-italic">TON</p>
+                    <button onclick="handlePayment(${i}, ${price})" class="w-full py-3 bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#0098ea] hover:text-white transition-all">Activate</button>
                 </div>
             `;
-            price *= 2; // Double the price for the next level
         }
         lucide.createIcons();
 
-        // Functions
-        function copyLink() {
-            const link = document.getElementById('refLink').innerText;
-            navigator.clipboard.writeText(link).then(() => {
-                alert("Referral link copied to clipboard!");
-            });
-        }
+        function handlePayment(lvl, amount) {
+            const contract50 = (amount * 0.5).toFixed(2);
+            const gas10 = (amount * 0.1).toFixed(2);
+            const partner40 = (amount * 0.4).toFixed(2);
 
-        function buyLevel(lvl, cost) {
-            alert("Payment Request: " + (lvl === 'Registration' ? 'Account Registration' : 'Level ' + lvl) + " for " + cost + " TON. Please connect your TON wallet.");
+            const msg = `Transaction Details (Level ${lvl}):\n\n` +
+                        `Total: ${amount} TON\n` +
+                        `--------------------------\n` +
+                        `50% to Contract: ${contract50} TON\n` +
+                        `10% Gas Fees: ${gas10} TON\n` +
+                        `40% To Partner: ${partner40} TON\n\n` +
+                        `Redirecting to TonKeeper...`;
+            alert(msg);
         }
 
         function connectWallet() {
-            const btn = document.getElementById('btnText');
-            btn.innerText = "Connecting...";
-            setTimeout(() => {
-                alert("Connect with TonKeeper or MyTonWallet to proceed.");
-                btn.innerText = "Wallet Connected";
-            }, 1000);
+            document.getElementById('btnText').innerText = "Connecting...";
+            setTimeout(() => { alert("Connected to TonKeeper!"); }, 500);
         }
     </script>
 </body>
