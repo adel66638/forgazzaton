@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FORGAZZATON | الدفع الآمن</title>
+    <title>FORGAZZATON | المصفوفة الذكية</title>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         :root { --primary-green: #00d084; --dark-bg: #0a0b10; --card-bg: #161b22; }
-        body { margin: 0; font-family: sans-serif; background-color: var(--dark-bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--dark-bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 28px; padding: 40px 30px; text-align: center; width: 90%; max-width: 400px; }
         .logo { width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary-green), #0088cc); border-radius: 22px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold; color: black; }
         #ton-connect-button { display: flex; justify-content: center; margin-bottom: 25px; }
@@ -24,15 +24,18 @@
     </div>
 
     <script>
+        // تهيئة الربط
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button'
         });
 
+        // إظهار زر الدفع عند الاتصال فقط
         tonConnectUI.onStatusChange(wallet => {
             document.getElementById('main-pay-btn').style.display = wallet ? 'block' : 'none';
         });
 
+        // وظيفة الدفع بالعنوان المكتمل
         document.getElementById('main-pay-btn').onclick = async () => {
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 360,
@@ -45,7 +48,8 @@
                 await tonConnectUI.sendTransaction(transaction);
                 alert("تمت العملية بنجاح!");
             } catch (e) {
-                alert("تم إلغاء العملية. تأكد من تحديث تطبيق المحفظة.");
+                // معالجة الخطأ الذي يظهر في صورك
+                alert("لم يكتمل الدفع: تأكد من الضغط على 'تأكيد' داخل المحفظة.");
             }
         };
     </script>
