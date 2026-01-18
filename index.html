@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FORGAZZATON</title>
+    <title>FORGAZZATON | الاشتراك</title>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
         body { background: #0a0b10; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .card { background: #161b22; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #30363d; width: 300px; }
-        #ton-connect-button { margin-bottom: 20px; }
-        .pay-btn { background: #00d084; color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; display: none; }
+        .card { background: #161b22; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #30363d; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #ton-connect-button { margin-bottom: 20px; display: flex; justify-content: center; }
+        .pay-btn { background: #00d084; color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; display: none; transition: 0.3s; }
+        .pay-btn:hover { background: #00b371; transform: scale(1.02); }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>FORGAZZATON</h2>
-        <p>المبلغ: 1.00 TON</p>
+        <h2 style="color: #00d084;">FORGAZZATON</h2>
+        <p>رسوم التفعيل لمرة واحدة</p>
+        <p style="font-size: 24px; font-weight: bold; margin: 10px 0;">1.00 TON</p>
         <div id="ton-connect-button"></div>
         <button class="pay-btn" id="payBtn">تأكيد الاشتراك الآن</button>
     </div>
@@ -26,21 +28,31 @@
             buttonRootId: 'ton-connect-button'
         });
 
-        tonConnectUI.onStatusChange(w => {
-            document.getElementById('payBtn').style.display = w ? 'block' : 'none';
+        // إظهار زر الدفع فقط عند ربط المحفظة
+        tonConnectUI.onStatusChange(wallet => {
+            document.getElementById('payBtn').style.display = wallet ? 'block' : 'none';
         });
 
         document.getElementById('payBtn').onclick = async () => {
             try {
-                await tonConnectUI.sendTransaction({
+                // إرسال المعاملة
+                const result = await tonConnectUI.sendTransaction({
                     validUntil: Math.floor(Date.now() / 1000) + 600,
                     messages: [{
                         address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx",
-                        amount: "1000000000"
+                        amount: "1000000000" // 1 TON
                     }]
                 });
+
+                // في حال النجاح: حفظ البيانات والتوجيه
+                localStorage.setItem('isPaid', 'true');
+                localStorage.setItem('userWallet', tonConnectUI.account.address);
+                
+                alert("تم التفعيل بنجاح! جاري تحويلك للوحة التحكم...");
+                window.location.href = "dashboard.html";
+
             } catch (e) {
-                alert("تنبيه: يجب الدخول للمحفظة والضغط على تأكيد (Confirm).");
+                alert("تنبيه: يجب إتمام المعاملة في محفظتك لتتمكن من الدخول.");
             }
         };
     </script>
