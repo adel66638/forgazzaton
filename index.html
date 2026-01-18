@@ -6,58 +6,65 @@
     <title>FORGAZZATON | Empowering Gaza</title>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #000; color: #fff; text-align: center; padding: 50px; }
-        .card { background: #050f05; border: 1px solid #00ff00; border-radius: 15px; padding: 20px; max-width: 400px; margin: auto; }
-        #ton-connect-button { margin-top: 20px; display: flex; justify-content: center; }
-        .btn-pay { background: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; margin-top: 20px; display: none; }
+        body { font-family: 'Arial', sans-serif; background-color: #000; color: #fff; text-align: center; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { background: #050f05; border: 2px solid #00ff00; border-radius: 20px; padding: 30px; width: 90%; max-width: 400px; box-shadow: 0 0 20px rgba(0, 255, 0, 0.2); }
+        h1 { color: #fff; margin-bottom: 10px; font-size: 24px; }
+        p { color: #ccc; font-size: 16px; }
+        #ton-connect-button { margin: 20px auto; display: flex; justify-content: center; }
+        .payment-section { display: none; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px; }
+        .btn-pay { background: #0088cc; color: #fff; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+        .btn-pay:hover { background: #0077b5; }
     </style>
 </head>
 <body>
 
-    <div class="card">
+    <div class="container">
         <h1>FORGAZZATON</h1>
         <p>تكلفة الدخول: 1 TON</p>
-        
+
         <div id="ton-connect-button"></div>
 
-        <button id="pay-button" class="btn-pay">دفع 1 TON للتفعيل</button>
+        <div id="payment-area" class="payment-section">
+            <button id="pay-button" class="btn-pay">دفع 1 TON للتفعيل</button>
+        </div>
     </div>
 
     <script>
-        // 1. إعداد مكتبة الربط وتحديد ملف المانيفست الخاص بك
+        // إعداد واجهة TON Connect باستخدام رابط المانيفست الذي أصلحته
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button'
         });
 
-        // 2. مراقبة حالة الاتصال لإظهار زر الدفع
+        // مراقبة حالة الاتصال لتغيير الواجهة
         tonConnectUI.onStatusChange(wallet => {
+            const paymentArea = document.getElementById('payment-area');
             if (wallet) {
-                document.getElementById('pay-button').style.display = 'block';
-                console.log('Wallet connected:', wallet.account.address);
+                paymentArea.style.display = 'block'; // إظهار زر الدفع عند الاتصال
+                console.log('تم الربط بمحفظة:', wallet.account.address);
             } else {
-                document.getElementById('pay-button').style.display = 'none';
+                paymentArea.style.display = 'none'; // إخفاء الزر عند تسجيل الخروج
             }
         });
 
-        // 3. وظيفة إرسال المعاملة (دفع 1 TON)
+        // وظيفة إرسال مبلغ 1 TON عند الضغط على الزر
         document.getElementById('pay-button').onclick = async () => {
             const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 60, // صالحة لمدة دقيقة
+                validUntil: Math.floor(Date.now() / 1000) + 300, // صالحة لمدة 5 دقائق
                 messages: [
                     {
-                        address: "ضع_هنا_عنوان_محفظتك_التي_تستلم_الاموال", 
-                        amount: "1000000000", // 1 TON بالنانو تون
+                        address: "UQBufh61LHE5H1NDJXQwRIVCX-t4iKHyyo...", // ضع عنوان محفظتك الكامل هنا لاستلام الأموال
+                        amount: "1000000000", // القيمة بالنانو (1 TON)
                     }
                 ]
             };
 
             try {
                 const result = await tonConnectUI.sendTransaction(transaction);
-                alert('تم إرسال المعاملة بنجاح!');
+                alert('تمت عملية الدفع بنجاح! سيتم تفعيل حسابك الآن.');
             } catch (e) {
-                console.error('Transaction error:', e);
-                alert('فشلت العملية أو تم إلغاؤها');
+                console.error('خطأ في العملية:', e);
+                alert('تم إلغاء العملية أو حدث خطأ أثناء الدفع.');
             }
         };
     </script>
