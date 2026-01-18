@@ -8,38 +8,54 @@
         :root { --main-green: #00d084; --bg-dark: #0a0b10; --card-bg: #161b22; --text-gray: #8b949e; }
         body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
         
-        /* نظام الحماية من التطفل */
-        #protected-content { display: none; }
-
         .header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--card-bg); border-radius: 15px; border: 1px solid #30363d; margin-bottom: 20px; }
         .status-badge { background: rgba(0, 208, 132, 0.1); color: var(--main-green); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid var(--main-green); }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .stat-card { background: var(--card-bg); padding: 15px; border-radius: 20px; border: 1px solid #30363d; text-align: center; }
         .stat-card h4 { margin: 0; font-size: 12px; color: var(--text-gray); }
-        .stat-card p { margin: 10px 0 0; font-size: 20px; font-weight: bold; color: var(--main-green); }
+        .stat-card p { margin: 10px 0 0; font-size: 18px; font-weight: bold; color: var(--main-green); word-break: break-all; }
 
         .ref-box { background: var(--card-bg); margin-top: 20px; padding: 20px; border-radius: 20px; border: 1px dashed var(--main-green); }
-        .ref-link { background: #000; padding: 10px; border-radius: 10px; font-family: monospace; font-size: 11px; margin: 10px 0; word-break: break-all; color: var(--main-green); text-align: center; }
+        .ref-link { background: #000; padding: 10px; border-radius: 10px; font-family: monospace; font-size: 11px; margin: 10px 0; word-break: break-all; color: var(--main-green); text-align: center; min-height: 20px; }
         .copy-btn { background: var(--main-green); color: black; border: none; padding: 12px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
+    <div class="header">
+        <div>
+            <h2 style="margin:0; font-size: 18px;">FORGAZZATON</h2>
+            <span id="displayID" style="color: var(--main-green); font-size: 14px;">ID: جاري التوليد...</span>
+        </div>
+        <div class="status-badge">متصل</div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card" style="grid-column: span 2;">
+            <h4>المحفظة المرتبطة</h4>
+            <p id="walletAddr" style="font-size: 12px; color: #8b949e;">لم يتم الربط بعد</p>
+        </div>
+        <div class="stat-card">
+            <h4>أرباح TON</h4>
+            <p>0.00</p>
+        </div>
+        <div class="stat-card">
+            <h4>المستوى</h4>
+            <p>1</p>
+        </div>
+    </div>
+
+    <div class="ref-box">
+        <h4 style="margin:0; text-align: center;">رابط الإحالة الخاص بك (ID)</h4>
+        <div class="ref-link" id="refLinkText">https://forgazzaton.vercel.app/?ref=...</div>
+        <button class="copy-btn" onclick="copyLink()">نسخ الرابط</button>
+    </div>
+
     <script>
-        const isPaid = localStorage.getItem('isPaid');
-        const userWallet = localStorage.getItem('userWallet');
-
-        if (isPaid !== 'true' || !userWallet) {
-            window.location.href = "index.html"; // طرد المستخدم إذا لم يدفع
-        } else {
-            document.addEventListener("DOMContentLoaded", function() {
-                document.getElementById('protected-content').style.display = 'block';
-                setupDashboard();
-            });
-        }
-
+        // دالة توليد الـ ID الرقمي
         function generateID(wallet) {
+            if(!wallet) return "778421"; // ID افتراضي في حال عدم وجود محفظة
             let hash = 0;
             for (let i = 0; i < wallet.length; i++) {
                 hash = ((hash << 5) - hash) + wallet.charCodeAt(i);
@@ -48,60 +64,26 @@
             return Math.abs(hash % 1000000);
         }
 
-        function setupDashboard() {
+        window.onload = function() {
+            const userWallet = localStorage.getItem('userWallet') || "";
             const userID = generateID(userWallet);
+            
+            // تحديث الواجهة
             document.getElementById('displayID').innerText = "ID: #" + userID;
+            if(userWallet) {
+                document.getElementById('walletAddr').innerText = userWallet;
+            }
             
             const myRefLink = "https://forgazzaton.vercel.app/?ref=" + userID;
             document.getElementById('refLinkText').innerText = myRefLink;
-        }
+        };
 
         function copyLink() {
             const link = document.getElementById('refLinkText').innerText;
             navigator.clipboard.writeText(link).then(() => {
-                alert("تم نسخ رابط الإحالة الخاص بك بنجاح!");
+                alert("تم نسخ الرابط! ابدأ بدعوة المبشرين.");
             });
         }
     </script>
-
-    <div id="protected-content">
-        <div class="header">
-            <div>
-                <h2 style="margin:0; font-size: 18px;">FORGAZZATON</h2>
-                <span id="displayID" style="color: var(--main-green); font-size: 14px;">ID: #------</span>
-            </div>
-            <div class="status-badge">نشط (Active)</div>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h4>أرباح TON</h4>
-                <p>0.00</p>
-            </div>
-            <div class="stat-card">
-                <h4>المستوى</h4>
-                <p>1</p>
-            </div>
-            <div class="stat-card">
-                <h4>المبشرين</h4>
-                <p>0</p>
-            </div>
-            <div class="stat-card" style="border-color: #30363d;">
-                <h4>الفريق</h4>
-                <p>0</p>
-            </div>
-        </div>
-
-        <div class="ref-box">
-            <h4 style="margin:0; text-align: center;">رابط الإحالة الخاص بك</h4>
-            <div class="ref-link" id="refLinkText">جاري التحميل...</div>
-            <button class="copy-btn" onclick="copyLink()">نسخ الرابط للمشاركة</button>
-        </div>
-        
-        <p style="text-align: center; color: var(--text-gray); font-size: 11px; margin-top: 30px;">
-            تذكر: يذهب 10% من كل عملية تفعيل لتطوير واستمرارية النظام.
-        </p>
-    </div>
-
 </body>
 </html>
