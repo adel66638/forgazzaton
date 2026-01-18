@@ -3,53 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FORGAZZATON | المصفوفة الذكية</title>
+    <title>FORGAZZATON | الدفع والاشتراك</title>
+    
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    
     <style>
         :root { --primary-green: #00d084; --dark-bg: #0a0b10; --card-bg: #161b22; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--dark-bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 28px; padding: 40px 30px; text-align: center; width: 90%; max-width: 400px; }
-        .logo { width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary-green), #0088cc); border-radius: 22px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold; color: black; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--dark-bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        .card { background: var(--card-bg); border: 1px solid #30363d; border-radius: 28px; padding: 40px 30px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .logo { width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary-green), #0088cc); border-radius: 22px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold; color: #000; }
         #ton-connect-button { display: flex; justify-content: center; margin-bottom: 25px; }
-        .btn-pay { background: var(--primary-green); color: black; border: none; padding: 18px; border-radius: 16px; font-size: 18px; font-weight: bold; width: 100%; cursor: pointer; display: none; }
+        .btn-pay { background: var(--primary-green); color: black; border: none; padding: 18px; border-radius: 16px; font-size: 18px; font-weight: bold; width: 100%; cursor: pointer; display: none; transition: 0.3s; }
+        .btn-pay:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,208,132,0.4); }
     </style>
 </head>
 <body>
+
     <div class="card">
         <div class="logo">F</div>
-        <h1>FORGAZZATON</h1>
-        <p style="color: #8b949e;">تكلفة الاشتراك: 1.00 TON</p>
+        <h1 style="margin:0; font-size:24px;">FORGAZZATON</h1>
+        <p style="color:var(--primary-green); font-size:12px; margin-bottom:20px;">SMART MATRIX SYSTEM</p>
+        
+        <div style="background:rgba(255,255,255,0.03); border-radius:12px; padding:15px; margin-bottom:25px; border:1px dashed #30363d;">
+            <p style="margin:0; font-size:14px; color:#8b949e;">تكلفة التفعيل</p>
+            <p style="margin:5px 0 0; font-size:20px; font-weight:bold;">1.00 TON</p>
+        </div>
+
         <div id="ton-connect-button"></div>
+        
         <button class="btn-pay" id="main-pay-btn">تأكيد ودفع الآن</button>
+        
+        <p style="margin-top:20px; font-size:10px; color:#5a6b7d;">تأكد من وجود 1.05 TON في محفظتك للرسوم</p>
     </div>
 
     <script>
-        // تهيئة الربط
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-button'
         });
 
-        // إظهار زر الدفع عند الاتصال فقط
         tonConnectUI.onStatusChange(wallet => {
-            document.getElementById('main-pay-btn').style.display = wallet ? 'block' : 'none';
+            const payBtn = document.getElementById('main-pay-btn');
+            if (payBtn) payBtn.style.display = wallet ? 'block' : 'none';
         });
 
-        // وظيفة الدفع بالعنوان المكتمل
         document.getElementById('main-pay-btn').onclick = async () => {
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 360,
                 messages: [{
-                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx",
-                    amount: "1000000000" // 1 TON
+                    // العنوان المكتمل الذي أرسلته لضمان وصول الأموال
+                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
+                    amount: "1000000000" // 1.00 TON
                 }]
             };
+
             try {
                 await tonConnectUI.sendTransaction(transaction);
-                alert("تمت العملية بنجاح!");
+                alert("تم إرسال طلب الدفع! يرجى تأكيده داخل تطبيق المحفظة.");
             } catch (e) {
-                // معالجة الخطأ الذي يظهر في صورك
-                alert("لم يكتمل الدفع: تأكد من الضغط على 'تأكيد' داخل المحفظة.");
+                alert("لم يكتمل الدفع: تأكد من الضغط على 'تأكيد' داخل المحفظة ووجود رصيد كافٍ.");
             }
         };
     </script>
