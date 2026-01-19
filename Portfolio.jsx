@@ -3,130 +3,106 @@ import { TonConnectButton, useTonConnectUI, useTonAddress } from '@tonconnect/ui
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc, collection, query, where, onSnapshot, updateDoc, increment } from "firebase/firestore";
 
-// عنوان محفظتك كمسؤول (المستوى 20 مفتوح دائماً)
+// عنوان محفظتك الشخصية
 const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
 
 const Portfolio = () => {
     const [tonConnectUI] = useTonConnectUI();
     const userAddress = useTonAddress();
     const [userLevel, setUserLevel] = useState(1);
-    const [totalEarnings, setTotalEarnings] = useState(0);
-    const [allTeamData, setAllTeamData] = useState([]);
     const [isAdmin, setIsAdmin] = useState(false);
 
-    // مصفوفة أسعار المستويات (بالنانو-تون) - هنا جعلت كل مستوى يكلف (المستوى * 1 TON)
-    const levelPrices = [0, 1000000000, 2000000000, 3000000000, 4000000000, 5000000000, 6000000000, 7000000000, 8000000000, 9000000000, 10000000000, 11000000000, 12000000000, 13000000000, 14000000000, 15000000000, 16000000000, 17000000000, 18000000000, 19000000000, 20000000000];
-
+    // 1. منطق تحديد المستوى والآدمن
     useEffect(() => {
-        if (userAddress && userAddress.toLowerCase() === ADMIN_WALLET.toLowerCase()) {
+        if (!userAddress) return;
+        
+        const addr = userAddress.toLowerCase();
+        
+        // إذا كان المتصل هو أنت
+        if (addr === ADMIN_WALLET.toLowerCase()) {
             setIsAdmin(true);
-            setUserLevel(20);
+            setUserLevel(20); // تفعيل المستوى 20 لك فوراً
         } else {
             setIsAdmin(false);
+            // جلب مستوى المستخدم العادي من Firebase
+            const unsub = onSnapshot(doc(db, "users", addr), (snap) => {
+                if (snap.exists()) {
+                    setUserLevel(snap.data().level || 1);
+                }
+            });
+            return () => unsub();
         }
     }, [userAddress]);
 
-    useEffect(() => {
-        if (!userAddress) return;
-        const addr = userAddress.toLowerCase();
-        const unsubProfile = onSnapshot(doc(db, "users", addr), (snap) => {
-            if (snap.exists()) {
-                setTotalEarnings(snap.data().totalEarnings || 0);
-                if (!isAdmin) setUserLevel(snap.data().level || 1);
-            }
-        });
-        const qTotal = query(collection(db, "users"), where("ancestors", "array-contains", addr));
-        const unsubTeam = onSnapshot(qTotal, (snap) => {
-            setAllTeamData(snap.docs.map(d => d.data()));
-        });
-        return () => { unsubProfile(); unsubTeam(); };
-    }, [userAddress, isAdmin]);
-
-    // --- دالة الترقية التي ستجعل المربع يعمل ---
-    const handleUpgrade = async (targetLevel) => {
-        if (!userAddress) return alert("Please connect your wallet first!");
-        if (isAdmin) return alert("Admin has all levels unlocked!");
-        if (targetLevel <= userLevel) return alert("Level already unlocked!");
-        if (targetLevel > userLevel + 1) return alert(`You must unlock Level ${userLevel + 1} first!`);
-
+    // 2. دالة الترقية (التي تجعل المربعات تعمل)
+    const handleUpgrade = async (lvl) => {
+        if (!userAddress) return alert("Please connect wallet!");
+        if (isAdmin) return alert("Admin unlocked all levels!");
+        
         try {
-            const price = levelPrices[targetLevel]; // جلب السعر من المصفوفة
+            // سعر تجريبي (يمكنك تعديله لاحقاً)
+            const amount = "500000000"; // 0.5 TON
             const tx = {
                 validUntil: Math.floor(Date.now() / 1000) + 60,
-                messages: [{
-                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // الأموال تذهب لمحفظتك
-                    amount: price.toString()
-                }]
+                messages: [{ address: ADMIN_WALLET, amount: amount }]
             };
-
+            
             const result = await tonConnectUI.sendTransaction(tx);
             if (result) {
-                // تحديث قاعدة البيانات بعد نجاح الدفع
+                // تحديث المستوى في Firebase بعد الدفع
                 await updateDoc(doc(db, "users", userAddress.toLowerCase()), {
-                    level: targetLevel
+                    level: lvl
                 });
-                alert(`Success! You are now Level ${targetLevel}`);
+                alert("Level Upgraded Successfully!");
             }
         } catch (e) {
             console.error(e);
-            alert("Transaction failed or cancelled.");
         }
-    };
-
-    const getLevelCount = (lvl) => {
-        return allTeamData.filter(m => (m.ancestors.length - m.ancestors.indexOf(userAddress.toLowerCase())) === lvl).length;
     };
 
     return (
         <div style={{ backgroundColor: '#050a1e', minHeight: '100vh', color: 'white', padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><TonConnectButton /></div>
-
-            <div style={{ border: '2px solid #1a2b5a', borderRadius: '20px', padding: '20px', textAlign: 'center', marginBottom: '15px' }}>
-                <p style={{ color: '#4a90e2' }}>{isAdmin ? "OWNER MODE" : "USER DASHBOARD"}</p>
-                <h1 style={{ color: isAdmin ? 'gold' : 'white' }}>LEVEL {userLevel}</h1>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                <TonConnectButton />
             </div>
 
-            {/* جدول المستويات التفاعلي */}
-            <div style={{ background: '#0a1633', borderRadius: '15px', padding: '15px' }}>
-                <h3 style={{textAlign: 'center', color: '#4a90e2'}}>LEVELS STATUS</h3>
-                <table style={{ width: '100%', textAlign: 'center' }}>
-                    <thead>
-                        <tr style={{ color: '#4a90e2', fontSize: '12px' }}>
-                            <th>LEVEL</th>
-                            <th>MEMBERS</th>
-                            <th>ACTION</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {[...Array(20)].map((_, i) => {
-                            const lvl = i + 1;
-                            const isUnlocked = isAdmin || userLevel >= lvl;
-                            const isNext = lvl === userLevel + 1;
+            {/* عرض المستوى الحالي بطريقة واضحة */}
+            <div style={{ textAlign: 'center', padding: '20px', background: '#0a1633', borderRadius: '15px', border: '1px solid #2b62f1' }}>
+                <h2 style={{ color: isAdmin ? 'gold' : 'white' }}>
+                    {isAdmin ? "MASTER ADMIN" : `CURRENT LEVEL: ${userLevel}`}
+                </h2>
+            </div>
 
-                            return (
-                                <tr key={lvl} style={{ borderTop: '1px solid #1a2b5a' }}>
-                                    <td style={{ padding: '10px' }}>L{lvl}</td>
-                                    <td>{getLevelCount(lvl)}</td>
-                                    <td>
-                                        <button 
-                                            onClick={() => !isUnlocked && isNext && handleUpgrade(lvl)}
-                                            style={{
-                                                background: isUnlocked ? '#00c853' : (isNext ? '#2b62f1' : '#333'),
-                                                color: 'white',
-                                                border: 'none',
-                                                padding: '5px 10px',
-                                                borderRadius: '5px',
-                                                cursor: (isUnlocked || !isNext) ? 'default' : 'pointer',
-                                                fontSize: '10px'
-                                            }}>
-                                            {isUnlocked ? "UNLOCKED" : (isNext ? "UPGRADE" : "LOCKED")}
-                                        </button>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+            <h3 style={{ marginTop: '30px', textAlign: 'center' }}>CHOOSE YOUR LEVEL</h3>
+            
+            {/* شبكة المستويات (Grid) - تأكد أن هذا الجزء تم تحديثه */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '15px', marginTop: '20px' }}>
+                {[...Array(20)].map((_, i) => {
+                    const lvl = i + 1;
+                    const isUnlocked = isAdmin || userLevel >= lvl;
+                    const isNext = lvl === userLevel + 1;
+
+                    return (
+                        <div 
+                            key={lvl}
+                            onClick={() => !isUnlocked && isNext && handleUpgrade(lvl)}
+                            style={{
+                                padding: '20px',
+                                borderRadius: '12px',
+                                textAlign: 'center',
+                                background: isUnlocked ? 'linear-gradient(45deg, #00c853, #b2ff59)' : (isNext ? '#2b62f1' : '#1a2b5a'),
+                                cursor: (isNext && !isUnlocked) ? 'pointer' : 'default',
+                                opacity: isUnlocked || isNext ? 1 : 0.5,
+                                border: isUnlocked ? '2px solid gold' : 'none',
+                                position: 'relative'
+                            }}
+                        >
+                            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>L{lvl}</div>
+                            <div style={{ fontSize: '10px' }}>{isUnlocked ? "ACTIVE" : (isNext ? "UPGRADE" : "LOCKED")}</div>
+                            {isUnlocked && <span style={{ position: 'absolute', top: '5px', right: '5px' }}>✅</span>}
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
