@@ -3,8 +3,8 @@ import { TonConnectButton, useTonConnectUI, useTonAddress } from '@tonconnect/ui
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc, collection, query, where, onSnapshot, updateDoc, increment } from "firebase/firestore";
 
-// --- أضف عنوان محفظتك هنا لفتح كل الصلاحيات ---
-const ADMIN_WALLET = "ضع_عنوان_محفظتك_هنا_بالكامل"; 
+// --- عنوان محفظتك تم وضعه هنا كمسؤول للنظام ---
+const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
 
 const Portfolio = () => {
     const [tonConnectUI] = useTonConnectUI();
@@ -15,7 +15,7 @@ const Portfolio = () => {
     const [allTeamData, setAllTeamData] = useState([]);
     const [isAdmin, setIsAdmin] = useState(false);
 
-    // التحقق من هوية الآدمن
+    // التحقق من هوية الآدمن عند اتصال المحفظة
     useEffect(() => {
         if (userAddress && userAddress.toLowerCase() === ADMIN_WALLET.toLowerCase()) {
             setIsAdmin(true);
@@ -67,7 +67,12 @@ const Portfolio = () => {
 
     const handleRegister = async () => {
         if (!userAddress) return alert("Connect Wallet First!");
-        if (isAdmin) return alert("You are the Admin - Level 20 is already active!");
+        
+        // إذا كنت أنت الآدمن، لا داعي لدفع رسوم العقد، سيتم تفعيلك برمجياً
+        if (isAdmin) {
+            alert("مرحباً أيها المطور! مستواك مفعل بالفعل (Admin Mode)");
+            return;
+        }
 
         try {
             const tx = {
@@ -111,7 +116,7 @@ const Portfolio = () => {
             <div style={{ border: '2px solid #1a2b5a', borderRadius: '20px', padding: '20px', textAlign: 'center', marginBottom: '15px' }}>
                 <p style={{ color: '#4a90e2' }}>{isAdmin ? "PROJECT OWNER ID" : "YOUR DIGITAL ID"}</p>
                 <h1 style={{ color: isAdmin ? 'gold' : 'white' }}>#{userAddress ? userAddress.slice(-6).toUpperCase() : "000000"}</h1>
-                {isAdmin && <span style={{fontSize: '12px', background: 'gold', color: 'black', padding: '2px 8px', borderRadius: '10px'}}>LEVEL 20 UNLOCKED</span>}
+                {isAdmin && <span style={{fontSize: '12px', background: 'gold', color: 'black', padding: '2px 10px', borderRadius: '10px', fontWeight: 'bold'}}>LEVEL 20 ACTIVE</span>}
                 
                 <p style={{ fontSize: '10px', marginTop: '10px' }}>REFERRAL LINK</p>
                 <div style={{ display: 'flex', background: '#0a1633', padding: '5px', borderRadius: '10px' }}>
@@ -143,22 +148,21 @@ const Portfolio = () => {
                     background: isAdmin ? '#00c853' : '#2b62f1', 
                     border: 'none', color: 'white', fontWeight: 'bold', cursor: isAdmin ? 'default' : 'pointer' 
                 }}>
-                {isAdmin ? "ADMIN ACCESS VERIFIED" : "REGISTER VIA CONTRACT"}
+                {isAdmin ? "ADMIN ACCESS VERIFIED ✅" : "REGISTER VIA CONTRACT"}
             </button>
 
             <div style={{ background: '#0a1633', borderRadius: '15px', padding: '10px' }}>
-                <h4 style={{textAlign: 'center', color: '#4a90e2'}}>LEVELS BREAKDOWN</h4>
+                <h4 style={{textAlign: 'center', color: '#4a90e2'}}>20 LEVELS STATUS</h4>
                 <table style={{ width: '100%', textAlign: 'center', fontSize: '12px' }}>
-                    <thead><tr style={{ color: '#4a90e2' }}><th>LEVEL</th><th>MEMBERS</th><th>BONUS</th></tr></thead>
+                    <thead><tr style={{ color: '#4a90e2' }}><th>LEVEL</th><th>MEMBERS</th><th>STATUS</th></tr></thead>
                     <tbody>
                         {[...Array(20)].map((_, i) => {
                             const lvl = i + 1;
-                            const rates = [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1];
                             return (
                                 <tr key={lvl} style={{ borderTop: '1px solid #1a2b5a' }}>
                                     <td style={{ padding: '8px', color: isAdmin ? 'gold' : 'white' }}>L{lvl}</td>
                                     <td>{getLevelCount(lvl)}</td>
-                                    <td>{rates[i]}%</td>
+                                    <td style={{ color: isAdmin ? '#00c853' : '#666' }}>{isAdmin ? "OPEN" : "LOCKED"}</td>
                                 </tr>
                             );
                         })}
