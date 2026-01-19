@@ -3,6 +3,9 @@ import { TonConnectButton, useTonConnectUI, useTonAddress } from '@tonconnect/ui
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc, collection, query, where, onSnapshot, updateDoc, increment } from "firebase/firestore";
 
+// --- أضف عنوان محفظتك هنا لفتح كل الصلاحيات ---
+const ADMIN_WALLET = "ضع_عنوان_محفظتك_هنا_بالكامل"; 
+
 const Portfolio = () => {
     const [tonConnectUI] = useTonConnectUI();
     const userAddress = useTonAddress();
@@ -10,8 +13,17 @@ const Portfolio = () => {
     const [totalSquad, setTotalSquad] = useState(0);
     const [totalEarnings, setTotalEarnings] = useState(0);
     const [allTeamData, setAllTeamData] = useState([]);
+    const [isAdmin, setIsAdmin] = useState(false);
 
-    // 1. التقاط رابط الإحالة من الـ URL وحفظه
+    // التحقق من هوية الآدمن
+    useEffect(() => {
+        if (userAddress && userAddress.toLowerCase() === ADMIN_WALLET.toLowerCase()) {
+            setIsAdmin(true);
+        } else {
+            setIsAdmin(false);
+        }
+    }, [userAddress]);
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const ref = urlParams.get('ref');
@@ -20,24 +32,19 @@ const Portfolio = () => {
         }
     }, []);
 
-    // 2. مراقبة بيانات المستخدم (الأرباح والشبكة) بشكل حي
     useEffect(() => {
         if (!userAddress) return;
         const addr = userAddress.toLowerCase();
 
-        // جلب رصيد الأرباح
         const unsubProfile = onSnapshot(doc(db, "users", addr), (snap) => {
             if (snap.exists()) setTotalEarnings(snap.data().totalEarnings || 0);
         });
 
-        // جلب كل الفريق (للحسابات والجداول)
         const qTotal = query(collection(db, "users"), where("ancestors", "array-contains", addr));
         const unsubTeam = onSnapshot(qTotal, (snap) => {
             const team = snap.docs.map(d => d.data());
             setAllTeamData(team);
             setTotalSquad(snap.size);
-            
-            // حساب المباشرين فقط من مصفوفة الفريق
             const directs = team.filter(m => m.referredBy === addr).length;
             setDirectCount(directs);
         });
@@ -45,7 +52,6 @@ const Portfolio = () => {
         return () => { unsubProfile(); unsubTeam(); };
     }, [userAddress]);
 
-    // 3. دالة توزيع الأرباح على المستويات (إسقاط الأرباح)
     const distributeEarnings = async (ancestorsArray) => {
         const rates = [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1];
         const reversedAncestors = [...ancestorsArray].reverse();
@@ -59,9 +65,10 @@ const Portfolio = () => {
         await Promise.all(updates.filter(p => p !== null));
     };
 
-    // 4. دالة التسجيل بالعقد الذكي
     const handleRegister = async () => {
         if (!userAddress) return alert("Connect Wallet First!");
+        if (isAdmin) return alert("You are the Admin - Level 20 is already active!");
+
         try {
             const tx = {
                 validUntil: Math.floor(Date.now() / 1000) + 60,
@@ -101,10 +108,11 @@ const Portfolio = () => {
         <div style={{ backgroundColor: '#050a1e', minHeight: '100vh', color: 'white', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><TonConnectButton /></div>
 
-            {/* الإحصائيات العلوية */}
             <div style={{ border: '2px solid #1a2b5a', borderRadius: '20px', padding: '20px', textAlign: 'center', marginBottom: '15px' }}>
-                <p style={{ color: '#4a90e2' }}>YOUR DIGITAL ID</p>
-                <h1>#{userAddress ? userAddress.slice(-6).toUpperCase() : "000000"}</h1>
+                <p style={{ color: '#4a90e2' }}>{isAdmin ? "PROJECT OWNER ID" : "YOUR DIGITAL ID"}</p>
+                <h1 style={{ color: isAdmin ? 'gold' : 'white' }}>#{userAddress ? userAddress.slice(-6).toUpperCase() : "000000"}</h1>
+                {isAdmin && <span style={{fontSize: '12px', background: 'gold', color: 'black', padding: '2px 8px', borderRadius: '10px'}}>LEVEL 20 UNLOCKED</span>}
+                
                 <p style={{ fontSize: '10px', marginTop: '10px' }}>REFERRAL LINK</p>
                 <div style={{ display: 'flex', background: '#0a1633', padding: '5px', borderRadius: '10px' }}>
                     <input readOnly value={`https://forgazzaton.vercel.app/?ref=${userAddress}`} style={{ background: 'none', border: 'none', color: '#4a90e2', width: '100%' }} />
@@ -128,20 +136,32 @@ const Portfolio = () => {
                 </div>
             </div>
 
-            <button onClick={handleRegister} style={{ width: '100%', margin: '20px 0', padding: '15px', borderRadius: '15px', background: '#2b62f1', border: 'none', color: 'white', fontWeight: 'bold' }}>REGISTER VIA CONTRACT</button>
+            <button 
+                onClick={handleRegister} 
+                style={{ 
+                    width: '100%', margin: '20px 0', padding: '15px', borderRadius: '15px', 
+                    background: isAdmin ? '#00c853' : '#2b62f1', 
+                    border: 'none', color: 'white', fontWeight: 'bold', cursor: isAdmin ? 'default' : 'pointer' 
+                }}>
+                {isAdmin ? "ADMIN ACCESS VERIFIED" : "REGISTER VIA CONTRACT"}
+            </button>
 
-            {/* جدول الإسقاطات */}
             <div style={{ background: '#0a1633', borderRadius: '15px', padding: '10px' }}>
+                <h4 style={{textAlign: 'center', color: '#4a90e2'}}>LEVELS BREAKDOWN</h4>
                 <table style={{ width: '100%', textAlign: 'center', fontSize: '12px' }}>
                     <thead><tr style={{ color: '#4a90e2' }}><th>LEVEL</th><th>MEMBERS</th><th>BONUS</th></tr></thead>
                     <tbody>
-                        {[1, 2, 3, 4, 5].map(lvl => (
-                            <tr key={lvl} style={{ borderTop: '1px solid #1a2b5a' }}>
-                                <td style={{ padding: '8px' }}>L{lvl}</td>
-                                <td>{getLevelCount(lvl)}</td>
-                                <td>{lvl === 1 ? "10%" : "5%"}</td>
-                            </tr>
-                        ))}
+                        {[...Array(20)].map((_, i) => {
+                            const lvl = i + 1;
+                            const rates = [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1];
+                            return (
+                                <tr key={lvl} style={{ borderTop: '1px solid #1a2b5a' }}>
+                                    <td style={{ padding: '8px', color: isAdmin ? 'gold' : 'white' }}>L{lvl}</td>
+                                    <td>{getLevelCount(lvl)}</td>
+                                    <td>{rates[i]}%</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
