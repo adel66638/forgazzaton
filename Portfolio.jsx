@@ -3,121 +3,108 @@ import { TonConnectButton, useTonConnectUI, useTonAddress } from '@tonconnect/ui
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc, collection, query, where, onSnapshot, updateDoc, increment } from "firebase/firestore";
 
+// عنوان محفظتك (تأكد من نسخه كما هو)
+const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
+
 const Portfolio = () => {
     const [tonConnectUI] = useTonConnectUI();
     const userAddress = useTonAddress();
-    const [directCount, setDirectCount] = useState(0);
-    const [totalSquad, setTotalSquad] = useState(0);
+    const [userLevel, setUserLevel] = useState(1);
     const [totalEarnings, setTotalEarnings] = useState(0);
     const [allTeamData, setAllTeamData] = useState([]);
+    const [isAdmin, setIsAdmin] = useState(false);
 
-    // --- التعديل المضاف للتعرف عليك كآدمن ---
-    const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx";
-
-    useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const ref = urlParams.get('ref');
-        if (ref) {
-            localStorage.setItem('pending_referrer', ref.toLowerCase());
-        }
-    }, []);
-
+    // 1. التحقق من المستوى والآدمن
     useEffect(() => {
         if (!userAddress) return;
         const addr = userAddress.toLowerCase();
-
-        const unsubProfile = onSnapshot(doc(db, "users", addr), (snap) => {
-            if (snap.exists()) setTotalEarnings(snap.data().totalEarnings || 0);
-        });
-
-        const qTotal = query(collection(db, "users"), where("ancestors", "array-contains", addr));
-        const unsubTeam = onSnapshot(qTotal, (snap) => {
-            const team = snap.docs.map(d => d.data());
-            setAllTeamData(team);
-            setTotalSquad(snap.size);
-            const directs = team.filter(m => m.referredBy === addr).length;
-            setDirectCount(directs);
-        });
-
-        return () => { unsubProfile(); unsubTeam(); };
+        
+        if (addr === ADMIN_WALLET.toLowerCase()) {
+            setIsAdmin(true);
+            setUserLevel(20);
+        } else {
+            setIsAdmin(false);
+            const unsub = onSnapshot(doc(db, "users", addr), (snap) => {
+                if (snap.exists()) setUserLevel(snap.data().level || 1);
+            });
+            return () => unsub();
+        }
     }, [userAddress]);
 
-    const distributeEarnings = async (ancestorsArray) => {
-        const rates = [10, 5, 3, 2, 1, 0.5, 0.5, 0.5, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1];
-        const reversedAncestors = [...ancestorsArray].reverse();
-        const updates = reversedAncestors.map((refAddr, index) => {
-            if (index >= rates.length) return null;
-            return updateDoc(doc(db, "users", refAddr), {
-                totalEarnings: increment(rates[index])
-            });
+    // 2. مراقبة الفريق والأرباح
+    useEffect(() => {
+        if (!userAddress) return;
+        const addr = userAddress.toLowerCase();
+        const qTotal = query(collection(db, "users"), where("ancestors", "array-contains", addr));
+        const unsubTeam = onSnapshot(qTotal, (snap) => {
+            setAllTeamData(snap.docs.map(d => d.data()));
         });
-        await Promise.all(updates.filter(p => p !== null));
-    };
+        return () => unsubTeam();
+    }, [userAddress]);
 
-    const handleRegister = async () => {
-        if (!userAddress) return alert("Connect Wallet First!");
+    // 3. دالة الترقية (هذا ما سيجعل المربعات تعمل)
+    const handleUpgrade = async (lvl) => {
+        if (!userAddress) return alert("Connect Wallet!");
+        if (isAdmin) return alert("Admin Access");
         
-        // إذا كنت أنت الآدمن، تفعيل فوري بدون دفع
-        if (userAddress.toLowerCase() === ADMIN_WALLET.toLowerCase()) {
-             const myAddr = userAddress.toLowerCase();
-             await setDoc(doc(db, "users", myAddr), {
-                address: myAddr, referredBy: null, ancestors: [], totalEarnings: 0, timestamp: new Date(), level: 20
-             }, { merge: true });
-             alert("Admin Level 20 Activated!");
-             return;
-        }
-
         try {
+            const amount = "500000000"; // 0.5 TON
             const tx = {
                 validUntil: Math.floor(Date.now() / 1000) + 60,
-                messages: [{ address: ADMIN_WALLET, amount: "50000000" }]
+                messages: [{ address: ADMIN_WALLET, amount: amount }]
             };
             const result = await tonConnectUI.sendTransaction(tx);
             if (result) {
-                const myAddr = userAddress.toLowerCase();
-                const refAddr = localStorage.getItem('pending_referrer');
-                const userRef = doc(db, "users", myAddr);
-                const userSnap = await getDoc(userRef);
-
-                if (!userSnap.exists()) {
-                    let ancestors = [];
-                    if (refAddr && refAddr !== myAddr) {
-                        const refDoc = await getDoc(doc(db, "users", refAddr));
-                        if (refDoc.exists()) {
-                            ancestors = [...(refDoc.data().ancestors || []), refAddr].slice(-20);
-                        }
-                    }
-                    await setDoc(userRef, {
-                        address: myAddr, referredBy: refAddr || null,
-                        ancestors: ancestors, totalEarnings: 0, timestamp: new Date(), level: 1
-                    });
-                    if (ancestors.length > 0) await distributeEarnings(ancestors);
-                    localStorage.removeItem('pending_referrer');
-                }
+                await updateDoc(doc(db, "users", userAddress.toLowerCase()), { level: lvl });
+                alert("Success!");
             }
         } catch (e) { console.error(e); }
     };
 
-    // تحديد المستوى للعرض فقط
-    const displayLevel = (userAddress && userAddress.toLowerCase() === ADMIN_WALLET.toLowerCase()) ? 20 : 1;
+    const getLevelCount = (lvl) => {
+        return allTeamData.filter(m => (m.ancestors.length - m.ancestors.indexOf(userAddress.toLowerCase())) === lvl).length;
+    };
 
     return (
         <div style={{ backgroundColor: '#050a1e', minHeight: '100vh', color: 'white', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><TonConnectButton /></div>
 
-            <div style={{ border: '2px solid #1a2b5a', borderRadius: '20px', padding: '20px', textAlign: 'center', marginBottom: '15px' }}>
-                <p style={{ color: '#4a90e2' }}>YOUR DIGITAL ID</p>
-                <h1>#{userAddress ? userAddress.slice(-6).toUpperCase() : "000000"}</h1>
-                <p style={{color: 'gold'}}>CURRENT LEVEL: {displayLevel}</p>
-                <div style={{ display: 'flex', background: '#0a1633', padding: '5px', borderRadius: '10px', marginTop: '10px' }}>
-                    <input readOnly value={`https://forgazzaton.vercel.app/?ref=${userAddress}`} style={{ background: 'none', border: 'none', color: '#4a90e2', width: '100%' }} />
-                    <button onClick={() => navigator.clipboard.writeText(`https://forgazzaton.vercel.app/?ref=${userAddress}`)} style={{ background: '#2b62f1', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '5px' }}>COPY</button>
-                </div>
+            {/* بطاقة تعريفية */}
+            <div style={{ border: '2px solid #2b62f1', borderRadius: '20px', padding: '20px', textAlign: 'center', background: '#0a1633' }}>
+                <p style={{ color: '#4a90e2' }}>{isAdmin ? "⭐ OWNER MODE" : "MY STATUS"}</p>
+                <h1 style={{ color: isAdmin ? 'gold' : 'white' }}>LEVEL {userLevel}</h1>
+                <p style={{fontSize: '10px'}}>{userAddress}</p>
             </div>
 
-            <button onClick={handleRegister} style={{ width: '100%', margin: '20px 0', padding: '15px', borderRadius: '15px', background: '#2b62f1', border: 'none', color: 'white', fontWeight: 'bold' }}>
-                {displayLevel === 20 ? "ADMIN VERIFIED" : "REGISTER / UPGRADE"}
-            </button>
+            {/* شبكة المستويات التفاعلية */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginTop: '20px' }}>
+                {[...Array(20)].map((_, i) => {
+                    const l = i + 1;
+                    const isUnlocked = isAdmin || userLevel >= l;
+                    const isNext = l === userLevel + 1;
+                    
+                    return (
+                        <div 
+                            key={l}
+                            onClick={() => !isUnlocked && isNext && handleUpgrade(l)}
+                            style={{
+                                padding: '15px 5px',
+                                background: isUnlocked ? '#00c853' : (isNext ? '#2b62f1' : '#1a2b5a'),
+                                borderRadius: '12px',
+                                textAlign: 'center',
+                                fontSize: '12px',
+                                cursor: isNext ? 'pointer' : 'default',
+                                border: isUnlocked ? '1px solid gold' : 'none',
+                                opacity: (isUnlocked || isNext) ? 1 : 0.4
+                            }}
+                        >
+                            L{l}<br/>
+                            {isUnlocked ? "✅" : (isNext ? "🛒" : "🔒")}
+                            <div style={{fontSize: '8px', marginTop: '4px'}}>{getLevelCount(l)}</div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 };
