@@ -10,11 +10,12 @@ const Portfolio = () => {
     const [tonConnectUI] = useTonConnectUI();
     const userAddress = useTonAddress();
     const [userLevel, setUserLevel] = useState(1);
-    const [directCount, setDirectCount] = useState(0);
-    const [totalSquad, setTotalSquad] = useState(0);
     const [totalEarnings, setTotalEarnings] = useState(0);
     const [allTeamData, setAllTeamData] = useState([]);
     const [isAdmin, setIsAdmin] = useState(false);
+
+    // مصفوفة أسعار المستويات (بالنانو-تون) - هنا جعلت كل مستوى يكلف (المستوى * 1 TON)
+    const levelPrices = [0, 1000000000, 2000000000, 3000000000, 4000000000, 5000000000, 6000000000, 7000000000, 8000000000, 9000000000, 10000000000, 11000000000, 12000000000, 13000000000, 14000000000, 15000000000, 16000000000, 17000000000, 18000000000, 19000000000, 20000000000];
 
     useEffect(() => {
         if (userAddress && userAddress.toLowerCase() === ADMIN_WALLET.toLowerCase()) {
@@ -28,48 +29,48 @@ const Portfolio = () => {
     useEffect(() => {
         if (!userAddress) return;
         const addr = userAddress.toLowerCase();
-
         const unsubProfile = onSnapshot(doc(db, "users", addr), (snap) => {
             if (snap.exists()) {
                 setTotalEarnings(snap.data().totalEarnings || 0);
                 if (!isAdmin) setUserLevel(snap.data().level || 1);
             }
         });
-
         const qTotal = query(collection(db, "users"), where("ancestors", "array-contains", addr));
         const unsubTeam = onSnapshot(qTotal, (snap) => {
-            const team = snap.docs.map(d => d.data());
-            setAllTeamData(team);
-            setTotalSquad(snap.size);
-            setDirectCount(team.filter(m => m.referredBy === addr).length);
+            setAllTeamData(snap.docs.map(d => d.data()));
         });
-
         return () => { unsubProfile(); unsubTeam(); };
     }, [userAddress, isAdmin]);
 
-    // دالة الترقية للمستخدمين العاديين
-    const handleUpgrade = async (nextLevel) => {
-        if (!userAddress) return alert("Connect Wallet First!");
-        if (isAdmin) return alert("You are Admin - All levels are open!");
-        if (nextLevel <= userLevel) return alert("You already unlocked this level!");
+    // --- دالة الترقية التي ستجعل المربع يعمل ---
+    const handleUpgrade = async (targetLevel) => {
+        if (!userAddress) return alert("Please connect your wallet first!");
+        if (isAdmin) return alert("Admin has all levels unlocked!");
+        if (targetLevel <= userLevel) return alert("Level already unlocked!");
+        if (targetLevel > userLevel + 1) return alert(`You must unlock Level ${userLevel + 1} first!`);
 
         try {
-            // سعر افتراضي للترقية (0.5 TON كمثال) - يمكنك تعديله
-            const upgradeAmount = "500000000"; 
-            
+            const price = levelPrices[targetLevel]; // جلب السعر من المصفوفة
             const tx = {
                 validUntil: Math.floor(Date.now() / 1000) + 60,
-                messages: [{ address: "YOUR_CONTRACT_ADDRESS", amount: upgradeAmount }]
+                messages: [{
+                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // الأموال تذهب لمحفظتك
+                    amount: price.toString()
+                }]
             };
-            
+
             const result = await tonConnectUI.sendTransaction(tx);
             if (result) {
+                // تحديث قاعدة البيانات بعد نجاح الدفع
                 await updateDoc(doc(db, "users", userAddress.toLowerCase()), {
-                    level: nextLevel
+                    level: targetLevel
                 });
-                alert(`Success! Level ${nextLevel} Unlocked.`);
+                alert(`Success! You are now Level ${targetLevel}`);
             }
-        } catch (e) { console.error("Upgrade failed", e); }
+        } catch (e) {
+            console.error(e);
+            alert("Transaction failed or cancelled.");
+        }
     };
 
     const getLevelCount = (lvl) => {
@@ -77,71 +78,48 @@ const Portfolio = () => {
     };
 
     return (
-        <div style={{ backgroundColor: '#050a1e', minHeight: '100vh', color: 'white', padding: '20px', fontFamily: 'Arial' }}>
+        <div style={{ backgroundColor: '#050a1e', minHeight: '100vh', color: 'white', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}><TonConnectButton /></div>
 
-            {/* بطاقة المستخدم */}
-            <div style={{ border: '2px solid #1a2b5a', borderRadius: '20px', padding: '20px', textAlign: 'center', marginBottom: '15px', background: '#0a1633' }}>
-                <p style={{ color: '#4a90e2', fontSize: '12px' }}>{isAdmin ? "👑 PROJECT OWNER" : "USER DASHBOARD"}</p>
-                <h1 style={{ color: isAdmin ? 'gold' : 'white', margin: '10px 0' }}>
-                    #{userAddress ? userAddress.slice(-6).toUpperCase() : "000000"}
-                </h1>
-                <div style={{ background: '#2b62f1', display: 'inline-block', padding: '5px 15px', borderRadius: '10px', fontSize: '14px' }}>
-                    LEVEL {userLevel}
-                </div>
-            </div>
-
-            {/* الأرباح والفريق */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', marginBottom: '20px' }}>
-                <div style={{ border: '1px solid #2b62f1', borderRadius: '15px', padding: '15px', textAlign: 'center', background: '#0a1633' }}>
-                    <p style={{ fontSize: '12px', color: '#4a90e2' }}>TOTAL EARNINGS</p>
-                    <h2 style={{ color: '#00c853' }}>{totalEarnings.toFixed(2)} TON</h2>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div style={{ background: '#0a1633', padding: '15px', borderRadius: '15px', textAlign: 'center', border: '1px solid #1a2b5a' }}>
-                        <p style={{ fontSize: '10px' }}>DIRECT</p>
-                        <h3>{directCount}</h3>
-                    </div>
-                    <div style={{ background: '#0a1633', padding: '15px', borderRadius: '15px', textAlign: 'center', border: '1px solid #1a2b5a' }}>
-                        <p style={{ fontSize: '10px' }}>SQUAD</p>
-                        <h3>{totalSquad}</h3>
-                    </div>
-                </div>
+            <div style={{ border: '2px solid #1a2b5a', borderRadius: '20px', padding: '20px', textAlign: 'center', marginBottom: '15px' }}>
+                <p style={{ color: '#4a90e2' }}>{isAdmin ? "OWNER MODE" : "USER DASHBOARD"}</p>
+                <h1 style={{ color: isAdmin ? 'gold' : 'white' }}>LEVEL {userLevel}</h1>
             </div>
 
             {/* جدول المستويات التفاعلي */}
-            <div style={{ background: '#0a1633', borderRadius: '20px', padding: '15px', border: '1px solid #1a2b5a' }}>
-                <h3 style={{ textAlign: 'center', marginBottom: '15px', color: '#4a90e2' }}>UPGRADE LEVELS</h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div style={{ background: '#0a1633', borderRadius: '15px', padding: '15px' }}>
+                <h3 style={{textAlign: 'center', color: '#4a90e2'}}>LEVELS STATUS</h3>
+                <table style={{ width: '100%', textAlign: 'center' }}>
                     <thead>
                         <tr style={{ color: '#4a90e2', fontSize: '12px' }}>
-                            <th style={{ paddingBottom: '10px' }}>LVL</th>
-                            <th style={{ paddingBottom: '10px' }}>MEMBERS</th>
-                            <th style={{ paddingBottom: '10px' }}>ACTION</th>
+                            <th>LEVEL</th>
+                            <th>MEMBERS</th>
+                            <th>ACTION</th>
                         </tr>
                     </thead>
                     <tbody>
                         {[...Array(20)].map((_, i) => {
                             const lvl = i + 1;
                             const isUnlocked = isAdmin || userLevel >= lvl;
+                            const isNext = lvl === userLevel + 1;
+
                             return (
                                 <tr key={lvl} style={{ borderTop: '1px solid #1a2b5a' }}>
-                                    <td style={{ padding: '12px 5px', textAlign: 'center' }}>L{lvl}</td>
-                                    <td style={{ textAlign: 'center' }}>{getLevelCount(lvl)}</td>
-                                    <td style={{ textAlign: 'center' }}>
+                                    <td style={{ padding: '10px' }}>L{lvl}</td>
+                                    <td>{getLevelCount(lvl)}</td>
+                                    <td>
                                         <button 
-                                            onClick={() => !isUnlocked && handleUpgrade(lvl)}
+                                            onClick={() => !isUnlocked && isNext && handleUpgrade(lvl)}
                                             style={{
-                                                background: isUnlocked ? 'rgba(0, 200, 83, 0.1)' : '#2b62f1',
-                                                color: isUnlocked ? '#00c853' : 'white',
-                                                border: isUnlocked ? '1px solid #00c853' : 'none',
+                                                background: isUnlocked ? '#00c853' : (isNext ? '#2b62f1' : '#333'),
+                                                color: 'white',
+                                                border: 'none',
                                                 padding: '5px 10px',
-                                                borderRadius: '8px',
-                                                fontSize: '11px',
-                                                cursor: isUnlocked ? 'default' : 'pointer',
-                                                width: '80px'
+                                                borderRadius: '5px',
+                                                cursor: (isUnlocked || !isNext) ? 'default' : 'pointer',
+                                                fontSize: '10px'
                                             }}>
-                                            {isUnlocked ? "UNLOCKED" : "UPGRADE"}
+                                            {isUnlocked ? "UNLOCKED" : (isNext ? "UPGRADE" : "LOCKED")}
                                         </button>
                                     </td>
                                 </tr>
