@@ -45,7 +45,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 text-center">
             <div class="glass p-6 rounded-3xl border-b-4 border-blue-500">
                 <p class="text-[10px] text-gray-400 font-black mb-1 uppercase tracking-widest">Total Earnings</p>
-                <p class="text-2xl font-black italic">0.00 TON</p>
+                <p id="total-earnings" class="text-2xl font-black italic">0.00 TON</p>
             </div>
             <div class="glass p-6 rounded-3xl border-b-4 border-green-500">
                 <p class="text-[10px] text-gray-400 font-black mb-1 uppercase tracking-widest">Direct Squad</p>
@@ -79,7 +79,6 @@
             buttonRootId: 'ton-connect-main'
         });
 
-        // عنوان محفظتك لاستقبال الدفعات
         const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
 
         function setupReferralAndTrack(address) {
@@ -96,15 +95,23 @@
             userRef.once('value').then((snapshot) => {
                 if (!snapshot.exists()) {
                     const upline = localStorage.getItem('my_upline_id') || "none";
-                    userRef.set({ wallet: address, myId: finalId, upline: upline, level: 1 });
+                    userRef.set({ 
+                        wallet: address, 
+                        myId: finalId, 
+                        upline: upline, 
+                        level: 1,
+                        earnings: 0 
+                    });
                 }
             });
 
+            // تحديث الإحصائيات (الخانات الثلاث)
             database.ref('users').on('value', (snapshot) => {
                 const allUsers = snapshot.val();
                 let direct = 0;
                 let indirect = 0;
                 let myDirectMembers = [];
+
                 for (let key in allUsers) {
                     if (allUsers[key].upline === finalId) {
                         direct++;
@@ -116,8 +123,14 @@
                         indirect++;
                     }
                 }
+                
                 document.getElementById('direct-squad').innerText = direct;
                 document.getElementById('total-squad').innerText = direct + indirect;
+                
+                // جلب الأرباح الخاصة بالمستخدم الحالي
+                if (allUsers[address] && allUsers[address].earnings !== undefined) {
+                    document.getElementById('total-earnings').innerText = allUsers[address].earnings.toFixed(2) + " TON";
+                }
             });
         }
 
@@ -135,35 +148,46 @@
                 const amountInNano = (price * 1000000000).toString();
                 const transaction = {
                     validUntil: Math.floor(Date.now() / 1000) + 300,
-                    messages: [
-                        {
-                            address: ADMIN_WALLET,
-                            amount: amountInNano,
-                        }
-                    ]
+                    messages: [{ address: ADMIN_WALLET, amount: amountInNano }]
                 };
 
                 const result = await tonConnectUI.sendTransaction(transaction);
                 
                 if (result) {
-                    // تحديث المستوى في المتصفح وقاعدة البيانات بعد نجاح الدفع
-                    localStorage.setItem('user_lvl_' + address, level);
+                    // 1. تحديث مستوى المستخدم
                     await database.ref('users/' + address).update({ level: level });
-                    alert("Success! You have upgraded to Level " + level);
+                    localStorage.setItem('user_lvl_' + address, level);
+
+                    // 2. منطق توزيع الأرباح (إضافة السعر لأرباح الأبلاين)
+                    const userSnap = await database.ref('users/' + address).once('value');
+                    const uplineId = userSnap.val().upline;
+
+                    if (uplineId && uplineId !== "none") {
+                        const usersRef = database.ref('users');
+                        const query = usersRef.orderByChild('myId').equalTo(uplineId);
+                        const uplineSnap = await query.once('value');
+                        
+                        if (uplineSnap.exists()) {
+                            const uplineKey = Object.keys(uplineSnap.val())[0];
+                            database.ref('users/' + uplineKey + '/earnings').transaction((current) => {
+                                return (current || 0) + price;
+                            });
+                        }
+                    }
+
+                    alert("Success! Level " + level + " Activated.");
                     renderLevels(address);
                 }
             } catch (e) {
-                console.error(e);
-                alert("Transaction failed or was canceled.");
+                alert("Transaction failed.");
             }
         }
 
         function renderLevels(address) {
             const grid = document.getElementById('levelsGrid');
-            database.ref('users/' + address).once('value').then((snapshot) => {
+            database.ref('users/' + address).on('value', (snapshot) => {
                 const userData = snapshot.val();
                 const userLvl = userData ? (userData.level || 1) : 1;
-                
                 grid.innerHTML = "";
                 for (let i = 1; i <= 20; i++) {
                     let price = i === 1 ? 1 : i; 
