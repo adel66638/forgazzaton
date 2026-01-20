@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | FF FORTONE</title>
+
+    <link rel="icon" type="image/png" href="Screenshot_2026-01-20-23-43-19-142_com.android.chrome.jpg">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -124,7 +127,6 @@
                 }
             });
 
-            // تحديث الإحصائيات الشخصية والعالمية
             database.ref('users').on('value', (snapshot) => {
                 const allUsers = snapshot.val();
                 let direct = 0; let indirect = 0; let myDirectMembers = [];
@@ -153,17 +155,12 @@
             });
         }
 
-        // دالة تشغيل شريط الأحداث المباشر
         function startLiveFeed() {
             const feed = document.getElementById('live-feed');
-            
-            // مراقبة الأعضاء الجدد
             database.ref('users').limitToLast(5).on('child_added', (snap) => {
                 const user = snap.val();
                 addFeedItem(`🟢 New Member joined: ID #${user.myId}`, "text-green-400");
             });
-
-            // مراقبة الترقيات
             database.ref('users').on('child_changed', (snap) => {
                 const user = snap.val();
                 addFeedItem(`🔥 ID #${user.myId} upgraded to Level ${user.level}`, "text-blue-400");
