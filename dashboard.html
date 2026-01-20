@@ -61,7 +61,6 @@
     </main>
 
     <script>
-        // إعدادات Firebase باستخدام الرابط الذي أرسلته
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -80,7 +79,9 @@
             buttonRootId: 'ton-connect-main'
         });
 
-        // توليد ID رقمي وتتبع الفريق المباشر وغير المباشر
+        // عنوان محفظتك لاستقبال الدفعات
+        const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
+
         function setupReferralAndTrack(address) {
             let numericString = "";
             for (let i = 0; i < address.length; i++) {
@@ -91,22 +92,19 @@
             document.getElementById('user-id').innerText = "#" + finalId;
             document.getElementById('ref-link').value = window.location.origin + "/index.html?ref=" + finalId;
 
-            // حفظ بيانات المستخدم في Firebase
             const userRef = database.ref('users/' + address);
             userRef.once('value').then((snapshot) => {
                 if (!snapshot.exists()) {
                     const upline = localStorage.getItem('my_upline_id') || "none";
-                    userRef.set({ wallet: address, myId: finalId, upline: upline });
+                    userRef.set({ wallet: address, myId: finalId, upline: upline, level: 1 });
                 }
             });
 
-            // حساب الفريق لحظياً
             database.ref('users').on('value', (snapshot) => {
                 const allUsers = snapshot.val();
                 let direct = 0;
                 let indirect = 0;
                 let myDirectMembers = [];
-
                 for (let key in allUsers) {
                     if (allUsers[key].upline === finalId) {
                         direct++;
@@ -132,22 +130,56 @@
             }
         });
 
+        async function upgradeLevel(level, price, address) {
+            try {
+                const amountInNano = (price * 1000000000).toString();
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 300,
+                    messages: [
+                        {
+                            address: ADMIN_WALLET,
+                            amount: amountInNano,
+                        }
+                    ]
+                };
+
+                const result = await tonConnectUI.sendTransaction(transaction);
+                
+                if (result) {
+                    // تحديث المستوى في المتصفح وقاعدة البيانات بعد نجاح الدفع
+                    localStorage.setItem('user_lvl_' + address, level);
+                    await database.ref('users/' + address).update({ level: level });
+                    alert("Success! You have upgraded to Level " + level);
+                    renderLevels(address);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Transaction failed or was canceled.");
+            }
+        }
+
         function renderLevels(address) {
             const grid = document.getElementById('levelsGrid');
-            const userLvl = parseInt(localStorage.getItem('user_lvl_' + address)) || 1;
-            grid.innerHTML = "";
-            for (let i = 1; i <= 20; i++) {
-                let price = i === 1 ? 1 : i; 
-                let isActive = i <= userLvl;
-                grid.innerHTML += `
-                    <div class="glass p-6 rounded-[2rem] text-center border ${isActive ? 'border-green-500/30' : 'border-white/5'}">
-                        <p class="text-[8px] font-black text-blue-500 mb-2 uppercase italic">Level ${i}</p>
-                        <p class="text-2xl font-black italic mb-6">${price} <span class="text-xs text-gray-500 uppercase">TON</span></p>
-                        <button class="w-full py-3 rounded-xl text-[9px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600'}" ${isActive ? 'disabled' : ''}>
-                            ${isActive ? 'Active' : 'Upgrade'}
-                        </button>
-                    </div>`;
-            }
+            database.ref('users/' + address).once('value').then((snapshot) => {
+                const userData = snapshot.val();
+                const userLvl = userData ? (userData.level || 1) : 1;
+                
+                grid.innerHTML = "";
+                for (let i = 1; i <= 20; i++) {
+                    let price = i === 1 ? 1 : i; 
+                    let isActive = i <= userLvl;
+                    grid.innerHTML += `
+                        <div class="glass p-6 rounded-[2rem] text-center border ${isActive ? 'border-green-500/30' : 'border-white/5'}">
+                            <p class="text-[8px] font-black text-blue-500 mb-2 uppercase italic">Level ${i}</p>
+                            <p class="text-2xl font-black italic mb-6">${price} <span class="text-xs text-gray-500 uppercase">TON</span></p>
+                            <button onclick="upgradeLevel(${i}, ${price}, '${address}')" 
+                                class="w-full py-3 rounded-xl text-[9px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600'}" 
+                                ${isActive ? 'disabled' : ''}>
+                                ${isActive ? 'Active' : 'Upgrade'}
+                            </button>
+                        </div>`;
+                }
+            });
         }
 
         function copyRef() {
