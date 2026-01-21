@@ -1,39 +1,3 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF_Fortone - لوحة التحكم</title>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <script src="https://unpkg.com/tonweb@latest/dist/tonweb.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #1a1a1a; color: white; text-align: center; padding: 20px; }
-        .card { background: #2d2d2d; border-radius: 15px; padding: 20px; margin: 20px auto; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        button { background: #0088cc; color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; }
-        button:hover { background: #005f8d; }
-        .ref-link { color: #00bcff; word-break: break-all; font-size: 14px; }
-    </style>
-</head>
-<body>
-
-    <h1>FF_Fortone Dashboard</h1>
-    
-    <div id="ton-connect"></div>
-
-    <div class="card">
-        <h3>مستوى الترقية</h3>
-        <p>سعر الترقية: 0.5 TON</p>
-        <button onclick="buyUpgrade()">اشترِ الترقية الآن</button>
-    </div>
-
-    <div class="card">
-        <h3>رابط الإحالة الخاص بك</h3>
-        <p id="myRefLink" class="ref-link">يرجى ربط المحفظة أولاً</p>
-        <button onclick="copyLink()">نسخ الرابط</button>
-    </div>
-
-    <script>
-        // --- الإعدادات الأساسية ---
         const CONTRACT_ADDRESS = "EQCflHDD-IqNofP4D2LzL_fX4XfX4XfX4XfX4uOrbFZha"; // عنوان عقدك الذكي
         const tonConnectUI = new TONConnectUI.TonConnectUI({
             manifestUrl: 'https://raw.githubusercontent.com/ton-connect/demo-dapp-with-react-ui/main/public/tonconnect-manifest.json',
