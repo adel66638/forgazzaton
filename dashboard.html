@@ -1,39 +1,3 @@
-        const CONTRACT_ADDRESS = "EQCflHDD-IqNofP4D2LzL_fX4XfX4XfX4XfX4uOrbFZha"; // عنوان عقدك الذكي
-        const tonConnectUI = new TONConnectUI.TonConnectUI({
-            manifestUrl: 'https://raw.githubusercontent.com/ton-connect/demo-dapp-with-react-ui/main/public/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect'
-        });
-
-        const tonweb = new TonWeb();
-
-        // --- توليد رابط الإحالة ---
-        tonConnectUI.onStatusChange(wallet => {
-            if (wallet) {
-                const userAddr = wallet.account.address;
-                const rawAddr = new TonWeb.utils.Address(userAddr).toString(true, true, true);
-                const refLink = window.location.origin + window.location.pathname + "?ref=" + rawAddr;
-                document.getElementById('myRefLink').innerText = refLink;
-            }
-        });
-
-        // --- دالة الشراء والتوزيع التلقائي ---
-        async function buyUpgrade() {
-            if (!tonConnectUI.connected) {
-                alert("يرجى ربط محفظتك أولاً!");
-                return;
-            }
-
-            // الحصول على عنوان المحيل من الرابط (الذي سيستلم الـ 50%)
-            const urlParams = new URLSearchParams(window.location.search);
-            let upline = urlParams.get('ref');
-
-            // إذا لم يوجد محيل، يتم إرسال المبلغ بالكامل لك (كأدمن) عبر العقد
-            if (!upline) {
-                upline = "UQCynb1kgftPUU-52BHZZMSKZu-TgXaPgjqXVVNOXqX0Fcau"; // ضع عنوان محفظتك الشخصية هنا كاحتياط
-            }
-
-            try {
-                const cell = new TonWeb.boc.Cell();
                 cell.bits.writeUint(0, 32); // Op-code للتحويل العادي
                 cell.bits.writeAddress(new TonWeb.utils.Address(upline));
 
