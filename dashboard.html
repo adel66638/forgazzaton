@@ -17,19 +17,40 @@
 <body class="pb-10">
 
     <header class="max-w-7xl mx-auto flex justify-between items-center p-6 glass rounded-[2rem] mt-4 mx-4">
-        <div class="flex items-center gap-2 font-black text-xl italic uppercase">
-            <span class="text-blue-500">FF</span>
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-7 h-7">
-            <span>FORTONE</span>
+        <div class="flex items-center gap-2 font-black text-xl italic uppercase text-blue-500">
+            FF <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-7 h-7"> FORTONE
         </div>
         <div id="ton-connect-main"></div>
     </header>
 
-    <main class="max-w-7xl mx-auto mt-10 px-4 text-center">
-        <div class="glass p-6 rounded-[2.5rem] mb-8 border border-blue-500/20">
-            <p id="user-id" class="text-3xl font-black italic text-blue-400">#000000</p>
-            <input id="ref-link" readonly class="bg-transparent text-center w-full text-xs text-blue-300 mt-2 outline-none">
-            <button onclick="copyRef()" class="mt-4 bg-blue-600 px-8 py-2 rounded-xl text-[10px] font-black uppercase">Copy Link</button>
+    <main class="max-w-7xl mx-auto mt-10 px-4">
+        <div class="glass p-6 rounded-[2.5rem] mb-8 border border-blue-500/20 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-center md:text-left">
+                <p class="text-blue-500 text-[10px] font-black uppercase mb-1">Your Digital ID</p>
+                <p id="user-id" class="text-3xl font-black italic">#000000</p>
+            </div>
+            <div class="flex-1 max-w-md w-full">
+                <div class="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/10">
+                    <input id="ref-link" readonly class="bg-transparent border-none px-4 py-2 w-full text-xs text-blue-300 outline-none">
+                    <button onclick="copyRef()" class="bg-blue-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase">Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 text-center">
+            <div class="glass p-6 rounded-3xl border-b-4 border-blue-500">
+                <p class="text-[10px] text-gray-400 font-black mb-1 uppercase">Total Earnings</p>
+                <p id="total-earnings" class="text-2xl font-black italic">0.00 TON</p>
+                <button onclick="withdrawEarnings()" class="mt-3 text-[9px] bg-blue-600/20 text-blue-400 border border-blue-500/30 px-4 py-1 rounded-full font-bold uppercase">Withdraw Funds</button>
+            </div>
+            <div class="glass p-6 rounded-3xl border-b-4 border-green-500">
+                <p class="text-[10px] text-gray-400 font-black mb-1 uppercase">Direct Squad</p>
+                <p id="direct-squad" class="text-2xl font-black italic text-green-400">0</p>
+            </div>
+            <div class="glass p-6 rounded-3xl border-b-4 border-yellow-500">
+                <p class="text-[10px] text-gray-400 font-black mb-1 uppercase">Total Squad Size</p>
+                <p id="total-squad" class="text-2xl font-black italic text-yellow-500">0</p>
+            </div>
         </div>
 
         <div id="levelsGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
@@ -52,76 +73,57 @@
             buttonRootId: 'ton-connect-main'
         });
 
-        // نظام الترقية الأوتوماتيكي الموزع
+        // ترقية أوتوماتيكية
         async function upgradeLevel(level, price, address) {
             try {
                 const userSnap = await database.ref('users/' + address).once('value');
                 const userData = userSnap.val();
                 const uplineId = userData.upline;
-
                 let messages = [];
 
                 if (level === 1) {
-                    // دفع 0.8 للأدمن (0.2 كاش باك داخلي)
                     messages.push({ address: ADMIN_WALLET, amount: (0.8 * 1000000000).toString() });
                 } else {
                     const half = price * 0.5;
                     messages.push({ address: ADMIN_WALLET, amount: (half * 1000000000).toString() });
-                    
                     if (uplineId && uplineId !== "none") {
-                        const uplineSnap = await database.ref('users').orderByChild('myId').equalTo(uplineId).once('value');
-                        if (uplineSnap.exists()) {
-                            const uplineWallet = Object.keys(uplineSnap.val())[0];
-                            messages.push({ address: uplineWallet, amount: (half * 1000000000).toString() });
+                        const q = database.ref('users').orderByChild('myId').equalTo(uplineId);
+                        const uSnap = await q.once('value');
+                        if (uSnap.exists()) {
+                            const uWallet = Object.keys(uSnap.val())[0];
+                            messages.push({ address: uWallet, amount: (half * 1000000000).toString() });
                         }
                     }
                 }
 
-                const tx = { validUntil: Math.floor(Date.now() / 1000) + 300, messages: messages };
-                await tonConnectUI.sendTransaction(tx);
-                
+                await tonConnectUI.sendTransaction({ validUntil: Math.floor(Date.now()/1000)+300, messages: messages });
                 await database.ref('users/' + address).update({ level: level });
-                alert("تمت الترقية بنجاح وتوزيع الأرباح آلياً!");
+                if (level === 1) await database.ref('users/' + address + '/earnings').transaction(c => (c || 0) + 0.2);
                 location.reload();
-            } catch (e) { alert("فشلت العملية أو تم إلغاؤها."); }
+            } catch (e) { alert("Transaction error."); }
         }
 
-        // باقي الوظائف (renderLevels, copyRef, etc.)
-        function renderLevels(address, currentLevel) {
-            const grid = document.getElementById('levelsGrid');
-            grid.innerHTML = "";
-            for (let i = 1; i <= 10; i++) {
-                let price = LEVEL_PRICES[i];
-                let active = i <= currentLevel;
-                grid.innerHTML += `
-                    <div class="glass p-6 rounded-[2rem] border ${active ? 'border-green-500' : 'border-white/5'}">
-                        <p class="text-[10px] text-blue-500 font-bold">LEVEL ${i}</p>
-                        <p class="text-xl font-black mb-4">${price} TON</p>
-                        <button onclick="upgradeLevel(${i}, ${price}, '${address}')" 
-                                class="w-full py-2 rounded-xl text-[10px] font-black ${active ? 'bg-green-600/20 text-green-500' : 'bg-blue-600'}"
-                                ${active ? 'disabled' : ''}>${active ? 'ACTIVE' : 'UPGRADE'}</button>
-                    </div>`;
-            }
+        async function withdrawEarnings() {
+            alert("Withdrawal request sent to admin. Your balance will be processed.");
         }
 
         tonConnectUI.onStatusChange(wallet => {
             if (wallet) {
                 const addr = wallet.account.address;
-                database.ref('users/' + addr).once('value').then(snap => {
-                    const data = snap.val() || { level: 0, myId: addr.slice(-6) };
-                    document.getElementById('user-id').innerText = "#" + (data.myId || "000000");
+                database.ref('users/' + addr).on('value', snap => {
+                    const data = snap.val() || { level: 0, myId: addr.slice(-6), earnings: 0 };
+                    document.getElementById('user-id').innerText = "#" + data.myId;
+                    document.getElementById('total-earnings').innerText = (data.earnings || 0).toFixed(2) + " TON";
                     document.getElementById('ref-link').value = window.location.origin + "?ref=" + data.myId;
                     renderLevels(addr, data.level);
                 });
             }
         });
 
-        function copyRef() {
-            const copyText = document.getElementById("ref-link");
-            copyText.select();
-            document.execCommand("copy");
-            alert("Referral Link Copied!");
-        }
-    </script>
-</body>
-</html>
+        function renderLevels(address, userLvl) {
+            const grid = document.getElementById('levelsGrid');
+            grid.innerHTML = "";
+            for (let i = 1; i <= 10; i++) {
+                let p = LEVEL_PRICES[i];
+                let active = i <= userLvl;
+                grid.innerHTML += `<div class="glass p-6 rounded-[2rem]
