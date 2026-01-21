@@ -19,6 +19,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         #live-feed::-webkit-scrollbar { width: 4px; }
         #live-feed::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.5); border-radius: 10px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body class="pb-10">
@@ -65,35 +66,31 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-            <div class="glass p-6 rounded-[2rem] border border-blue-500/10 flex flex-col justify-center">
-                <h3 class="text-blue-500 text-[10px] font-black uppercase tracking-widest mb-4">Global Network Growth</h3>
-                <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
-                    <span class="text-sm text-gray-400">New Members (Live):</span>
-                    <span id="new-users-live" class="text-green-400 font-black text-xl">+0</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-400">Total System Transactions:</span>
-                    <span id="total-tx-live" class="text-blue-400 font-black text-xl">0</span>
-                </div>
-            </div>
-
-            <div class="glass p-6 rounded-[2rem] border border-white/5 h-[160px] relative">
-                <h3 class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-3">Live Activity Feed</h3>
-                <div id="live-feed" class="space-y-2 overflow-y-auto h-[100px] pr-2 text-[10px]">
-                    <div class="text-gray-500 italic">Syncing with blockchain events...</div>
-                </div>
-            </div>
-        </div>
-
         <div id="levelsGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
     </main>
 
+    <div id="welcome-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="glass max-w-sm w-full p-8 rounded-[2.5rem] border border-blue-500/30 text-center animate-fade-in">
+            <div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🎁</div>
+            <h2 class="text-xl font-black italic mb-2 italic">WELCOME TO FF FORTONE</h2>
+            <div class="space-y-4 text-right mb-8 mt-6">
+                <div class="flex items-start gap-3 justify-end text-xs">
+                    <p>حصلت على <span class="text-blue-400 font-bold">0.20 TON</span> هدية اشتراك</p>
+                    <span class="text-blue-500">✔</span>
+                </div>
+                <div class="flex items-start gap-3 justify-end text-xs">
+                    <p>اربح <span class="text-green-400 font-bold">50% عمولة</span> من ترقيات فريقك</p>
+                    <span class="text-blue-500">✔</span>
+                </div>
+            </div>
+            <button onclick="closeWelcomeModal()" class="w-full py-4 bg-blue-600 rounded-2xl font-black uppercase text-xs hover:bg-blue-500 transition-all">ابدأ الآن</button>
+        </div>
+    </div>
+
     <script>
-        // جدول الأسعار المحدث حسب طلبك
         const LEVEL_PRICES = {
-            1: 1, 2: 2, 3: 4, 4: 8, 5: 10, 6: 12, 7: 21, 8: 24, 9: 30, 10: 40,
-            11: 50, 12: 60, 13: 70, 14: 80, 15: 90, 16: 100, 17: 120, 18: 150, 19: 180, 20: 200
+            1:1, 2:2, 3:4, 4:8, 5:10, 6:12, 7:21, 8:24, 9:30, 10:40,
+            11:50, 12:60, 13:70, 14:80, 15:90, 16:100, 17:120, 18:150, 19:180, 20:200
         };
 
         const firebaseConfig = {
@@ -118,9 +115,7 @@
 
         function setupReferralAndTrack(address) {
             let numericString = "";
-            for (let i = 0; i < address.length; i++) {
-                numericString += address.charCodeAt(i).toString();
-            }
+            for (let i = 0; i < address.length; i++) numericString += address.charCodeAt(i).toString();
             let finalId = numericString.slice(-6);
             
             document.getElementById('user-id').innerText = "#" + finalId;
@@ -131,34 +126,20 @@
                 if (!snapshot.exists()) {
                     const upline = localStorage.getItem('my_upline_id') || "none";
                     userRef.set({ wallet: address, myId: finalId, upline: upline, level: 0, earnings: 0 });
+                    setTimeout(() => document.getElementById('welcome-modal').classList.remove('hidden'), 2000);
                 }
             });
 
             database.ref('users').on('value', (snapshot) => {
                 const allUsers = snapshot.val();
-                let direct = 0; let indirect = 0; let myDirectMembers = [];
-                let totalTx = 0; let usersCount = 0;
-
+                let direct = 0, indirect = 0, myDirectMembers = [];
                 for (let key in allUsers) {
-                    usersCount++;
-                    if (allUsers[key].upline === finalId) {
-                        direct++;
-                        myDirectMembers.push(allUsers[key].myId);
-                    }
-                    if (allUsers[key].level > 0) totalTx += allUsers[key].level;
+                    if (allUsers[key].upline === finalId) { direct++; myDirectMembers.push(allUsers[key].myId); }
                 }
-                for (let key in allUsers) {
-                    if (myDirectMembers.includes(allUsers[key].upline)) indirect++;
-                }
-                
+                for (let key in allUsers) if (myDirectMembers.includes(allUsers[key].upline)) indirect++;
                 document.getElementById('direct-squad').innerText = direct;
                 document.getElementById('total-squad').innerText = direct + indirect;
-                document.getElementById('new-users-live').innerText = "+" + usersCount;
-                document.getElementById('total-tx-live').innerText = totalTx;
-                
-                if (allUsers[address] && allUsers[address].earnings !== undefined) {
-                    document.getElementById('total-earnings').innerText = allUsers[address].earnings.toFixed(2) + " TON";
-                }
+                if (allUsers[address]) document.getElementById('total-earnings').innerText = (allUsers[address].earnings || 0).toFixed(2) + " TON";
             });
         }
 
@@ -169,52 +150,38 @@
                     validUntil: Math.floor(Date.now() / 1000) + 300,
                     messages: [{ address: ADMIN_WALLET, amount: amountInNano }]
                 };
-
                 const result = await tonConnectUI.sendTransaction(transaction);
                 if (result) {
-                    // تحديث مستوى المستخدم
                     await database.ref('users/' + address).update({ level: level });
-                    
                     const userSnap = await database.ref('users/' + address).once('value');
                     const userData = userSnap.val();
 
                     if (level === 1) {
-                        // نظام الاشتراك: 0.2 للمشترك نفسه
                         await database.ref('users/' + address + '/earnings').transaction(c => (c || 0) + 0.2);
                     } else {
-                        // نظام الترقيات: 50% للمحيل
                         const uplineId = userData.upline;
                         if (uplineId && uplineId !== "none") {
                             const query = database.ref('users').orderByChild('myId').equalTo(uplineId);
                             const uplineSnap = await query.once('value');
                             if (uplineSnap.exists()) {
                                 const uplineKey = Object.keys(uplineSnap.val())[0];
-                                const profit = price * 0.5;
-                                await database.ref('users/' + uplineKey + '/earnings').transaction(c => (c || 0) + profit);
+                                await database.ref('users/' + uplineKey + '/earnings').transaction(c => (c || 0) + (price * 0.5));
                             }
                         }
                     }
-                    
-                    alert("Success! Level " + level + " Activated.");
-                    renderLevels(address);
+                    alert("Success! Level " + level + " Active.");
                 }
             } catch (e) { alert("Transaction failed."); }
         }
 
         async function withdrawEarnings() {
             const wallet = tonConnectUI.wallet;
-            if (!wallet) return alert("Please connect wallet first.");
-            
+            if (!wallet) return;
             const address = wallet.account.address;
             const snap = await database.ref('users/' + address).once('value');
             const earnings = snap.val().earnings || 0;
-
-            if (earnings < 0.1) return alert("Minimum withdrawal is 0.1 TON");
-
-            // هنا نرسل طلب سحب (في الواقع ستحتاج لنظام دفع تلقائي أو يدوي)
-            alert(`Withdrawal request for ${earnings.toFixed(2)} TON sent to admin. Your balance will be reset after processing.`);
-            
-            // تصفير الرصيد بعد طلب السحب (يمكنك جعلها يدوية من قبلك كأدمن)
+            if (earnings < 0.1) return alert("Minimum 0.1 TON");
+            alert(`طلب سحب بقيمة ${earnings.toFixed(2)} TON قيد المعالجة`);
             await database.ref('users/' + address).update({ earnings: 0 });
         }
 
@@ -229,56 +196,23 @@
                     let isActive = i <= userLvl;
                     grid.innerHTML += `
                         <div class="glass p-6 rounded-[2rem] text-center border ${isActive ? 'border-green-500/30' : 'border-white/5'}">
-                            <p class="text-[8px] font-black text-blue-500 mb-2 uppercase italic">Level ${i}</p>
-                            <p class="text-2xl font-black italic mb-6">${price} <span class="text-xs text-gray-500 uppercase">TON</span></p>
+                            <p class="text-[8px] font-black text-blue-500 mb-2 uppercase">Level ${i}</p>
+                            <p class="text-2xl font-black italic mb-6">${price} <span class="text-[10px] text-gray-500">TON</span></p>
                             <button onclick="upgradeLevel(${i}, ${price}, '${address}')" 
                                 class="w-full py-3 rounded-xl text-[9px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600'}" 
-                                ${isActive ? 'disabled' : ''}>
-                                ${isActive ? 'Active' : 'Upgrade'}
-                            </button>
+                                ${isActive ? 'disabled' : ''}>${isActive ? 'Active' : 'Upgrade'}</button>
                         </div>`;
                 }
             });
         }
 
-        // باقي الوظائف (Feed, Connect, Copy) تظل كما هي في كودك الأصلي
-        function startLiveFeed() {
-            const feed = document.getElementById('live-feed');
-            database.ref('users').limitToLast(5).on('child_added', (snap) => {
-                const user = snap.val();
-                addFeedItem(`🟢 New Member joined: ID #${user.myId}`, "text-green-400");
-            });
-            database.ref('users').on('child_changed', (snap) => {
-                const user = snap.val();
-                addFeedItem(`🔥 ID #${user.myId} upgraded to Level ${user.level}`, "text-blue-400");
-            });
-        }
-
-        function addFeedItem(text, colorClass) {
-            const feed = document.getElementById('live-feed');
-            const item = document.createElement('div');
-            item.className = `flex justify-between border-b border-white/5 pb-1 animate-fade-in ${colorClass}`;
-            item.innerHTML = `<span>${text}</span><span class="text-gray-600 text-[8px]">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>`;
-            feed.prepend(item);
-            if (feed.children.length > 20) feed.lastChild.remove();
-        }
+        function closeWelcomeModal() { document.getElementById('welcome-modal').classList.add('hidden'); }
+        function copyRef() { const c = document.getElementById("ref-link"); c.select(); document.execCommand("copy"); alert("Link Copied!"); }
 
         tonConnectUI.onStatusChange(wallet => {
-            if (wallet) {
-                setupReferralAndTrack(wallet.account.address);
-                renderLevels(wallet.account.address);
-                startLiveFeed();
-            } else {
-                window.location.href = 'index.html';
-            }
+            if (wallet) { setupReferralAndTrack(wallet.account.address); renderLevels(wallet.account.address); }
+            else { window.location.href = 'index.html'; }
         });
-
-        function copyRef() {
-            const copyText = document.getElementById("ref-link");
-            copyText.select();
-            document.execCommand("copy");
-            alert("Referral Link Copied!");
-        }
     </script>
 </body>
 </html>
