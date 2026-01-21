@@ -1,9 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | FF FORTONE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://unpkg.com/tonweb@latest/dist/tonweb.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-upgrade { background: linear-gradient(90deg, #2563eb, #7c3aed); transition: all 0.3s; }
+        .btn-upgrade:hover { transform: scale(1.02); opacity: 0.9; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6">
+
+    <div id="ton-connect" class="mb-10"></div>
+
+    <div class="glass p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-2xl">
+        <h1 class="text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+            لوحة التحكم
+        </h1>
+        <p class="text-gray-400 text-sm mb-8">نظام سحب وأرباح TON للموقع</p>
+
+        <div class="bg-black/20 p-6 rounded-3xl mb-8 border border-white/5">
+            <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">تكلفة الترقية</p>
+            <div class="flex items-center justify-center gap-2">
+                <span class="text-5xl font-bold">0.5</span>
+                <span class="text-blue-500 font-black text-xl">TON</span>
+            </div>
+        </div>
+
+        <button onclick="upgradeLevel()" class="btn-upgrade w-full py-5 rounded-2xl font-bold text-lg shadow-xl mb-6">
+            تفعيل الترقية الآن
+        </button>
+
+        <div class="text-right">
+            <p class="text-[10px] text-gray-500 mb-2 mr-2">رابط الإحالة الخاص بك:</p>
+            <div id="myRefLink" class="bg-black/40 p-4 rounded-xl text-[10px] break-all text-blue-300/80 border border-white/5 italic">
+                اربط المحفظة أولاً...
+            </div>
+            <button onclick="copyLink()" class="mt-3 text-xs text-blue-400 font-bold hover:text-blue-300 transition">نسخ الرابط</button>
         </div>
     </div>
 
     <script>
-        // الإعدادات - تأكد أن العناوين صحيحة هنا
-        const CONTRACT_ADDRESS = "EQCflHDD-IqNofP4D2LzL_fX4XfX4XfX4XfX4uOrbFZha"; 
+        const CONTRACT_ADDRESS = "EQCflHDD-IqNofP4D2LzL_fX4XfX4XfX4XfX4uOrbFZha";
         const MY_WALLET = "EQCynb1kgfPUU-52BHZZMSKZu-TgXaPgjqXVVNOXqX0FZtr";
 
         const tonConnectUI = new TONConnectUI.TonConnectUI({
@@ -14,45 +59,34 @@
         tonConnectUI.onStatusChange(wallet => {
             if (wallet) {
                 const userAddr = wallet.account.address;
-                const link = window.location.origin + window.location.pathname + "?ref=" + userAddr;
-                document.getElementById('myRefLink').innerText = link;
+                const friendlyAddr = new TonWeb.utils.Address(userAddr).toString(true, true, true);
+                document.getElementById('myRefLink').innerText = window.location.origin + window.location.pathname + "?ref=" + friendlyAddr;
             }
         });
 
         async function upgradeLevel() {
-            if (!tonConnectUI.connected) {
-                alert("يرجى ربط المحفظة أولاً!");
-                return;
-            }
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const upline = urlParams.get('ref') || MY_WALLET;
+            if (!tonConnectUI.connected) return alert("يرجى ربط المحفظة!");
+            
+            const params = new URLSearchParams(window.location.search);
+            const upline = params.get('ref') || MY_WALLET;
 
             try {
                 const tonweb = new TonWeb();
                 const cell = new TonWeb.boc.Cell();
                 cell.bits.writeUint(0, 32); 
                 cell.bits.writeAddress(new TonWeb.utils.Address(upline));
+                const boc = TonWeb.utils.bytesToBase64(await cell.toBoc());
 
-                const bocString = TonWeb.utils.bytesToBase64(await cell.toBoc());
-
-                const transaction = {
+                const tx = {
                     validUntil: Math.floor(Date.now() / 1000) + 300,
-                    messages: [
-                        {
-                            address: CONTRACT_ADDRESS,
-                            amount: "500000000",
-                            payload: bocString
-                        }
-                    ]
+                    messages: [{
+                        address: CONTRACT_ADDRESS,
+                        amount: "500000000", // 0.5 TON
+                        payload: boc
+                    }]
                 };
-
-                await tonConnectUI.sendTransaction(transaction);
-                alert("تم إرسال الطلب بنجاح!");
-            } catch (e) {
-                console.error(e);
-                alert("حدث خطأ أو تم إلغاء العملية.");
-            }
+                await tonConnectUI.sendTransaction(tx);
+            } catch (e) { alert("فشلت العملية"); }
         }
 
         function copyLink() {
