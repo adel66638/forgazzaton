@@ -1,4 +1,73 @@
-                cell.bits.writeUint(0, 32); // Op-code للتحويل العادي
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | FF FORTONE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://unpkg.com/tonweb@latest/dist/tonweb.js"></script>
+    <style>
+        body { background-color: #0f172a; color: white; font-family: sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 text-center">
+
+    <div id="ton-connect" class="mb-8"></div>
+
+    <div class="glass p-8 rounded-3xl shadow-2xl w-full max-w-md">
+        <h1 class="text-3xl font-bold mb-6 text-blue-400">لوحة التحكم</h1>
+        
+        <div class="mb-8 p-6 bg-slate-800/50 rounded-2xl">
+            <p class="text-gray-400 text-sm mb-2">تكلفة الترقية</p>
+            <p class="text-5xl font-extrabold">0.5 <span class="text-xl text-blue-500">TON</span></p>
+        </div>
+
+        <button onclick="upgradeLevel()" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/40 transition-all active:scale-95">
+            تفعيل الترقية الآن
+        </button>
+
+        <div class="mt-8 text-right">
+            <p class="text-sm text-gray-400 mb-2">رابط الإحالة الخاص بك:</p>
+            <div id="myRefLink" class="bg-black/40 p-3 rounded-lg text-[10px] break-all text-blue-300 border border-blue-900/50">
+                يرجى ربط المحفظة أولاً...
+            </div>
+            <button onclick="copyLink()" class="mt-2 text-xs text-blue-500 font-bold">نسخ الرابط</button>
+        </div>
+    </div>
+
+    <script>
+        // الإعدادات - تأكد أن العناوين صحيحة هنا
+        const CONTRACT_ADDRESS = "EQCflHDD-IqNofP4D2LzL_fX4XfX4XfX4XfX4uOrbFZha"; 
+        const MY_WALLET = "EQCynb1kgfPUU-52BHZZMSKZu-TgXaPgjqXVVNOXqX0FZtr";
+
+        const tonConnectUI = new TONConnectUI.TonConnectUI({
+            manifestUrl: 'https://raw.githubusercontent.com/ton-connect/demo-dapp-with-react-ui/main/public/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect'
+        });
+
+        tonConnectUI.onStatusChange(wallet => {
+            if (wallet) {
+                const userAddr = wallet.account.address;
+                const link = window.location.origin + window.location.pathname + "?ref=" + userAddr;
+                document.getElementById('myRefLink').innerText = link;
+            }
+        });
+
+        async function upgradeLevel() {
+            if (!tonConnectUI.connected) {
+                alert("يرجى ربط المحفظة أولاً!");
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const upline = urlParams.get('ref') || MY_WALLET;
+
+            try {
+                const tonweb = new TonWeb();
+                const cell = new TonWeb.boc.Cell();
+                cell.bits.writeUint(0, 32); 
                 cell.bits.writeAddress(new TonWeb.utils.Address(upline));
 
                 const bocString = TonWeb.utils.bytesToBase64(await cell.toBoc());
@@ -8,24 +77,25 @@
                     messages: [
                         {
                             address: CONTRACT_ADDRESS,
-                            amount: "500000000", // 0.5 TON بالنانو
+                            amount: "500000000",
                             payload: bocString
                         }
                     ]
                 };
 
                 await tonConnectUI.sendTransaction(transaction);
-                alert("تم إرسال الطلب! سيتم توزيع الأرباح فور تأكيد الشبكة.");
+                alert("تم إرسال الطلب بنجاح!");
             } catch (e) {
                 console.error(e);
-                alert("حدث خطأ في العملية.");
+                alert("حدث خطأ أو تم إلغاء العملية.");
             }
         }
 
         function copyLink() {
             const link = document.getElementById('myRefLink').innerText;
+            if(link.includes("...")) return alert("اربط المحفظة أولاً!");
             navigator.clipboard.writeText(link);
-            alert("تم نسخ رابط الإحالة!");
+            alert("تم نسخ الرابط!");
         }
     </script>
 </body>
