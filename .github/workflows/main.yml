@@ -1,8 +1,8 @@
 name: TON Bot Runner
 on:
   schedule:
-    - cron: '*/5 * * * *' # تشغيل آلي كل 5 دقائق
-  workflow_dispatch: # يسمح لك بتشغيله يدوياً في أي وقت
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
 
 jobs:
   run-bot:
