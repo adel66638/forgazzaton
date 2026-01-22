@@ -18,7 +18,6 @@
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* تأثيرات الحركية الجديدة */
         .pulse-green { animation: pulse-green 2s infinite; }
         @keyframes pulse-green {
             0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
@@ -68,20 +67,38 @@
                 <p id="total-earnings" class="text-2xl font-black italic">0.00 TON</p>
                 <button onclick="withdrawEarnings()" class="mt-3 text-[9px] bg-blue-600/20 text-blue-400 border border-blue-500/30 px-4 py-1 rounded-full font-bold uppercase hover:bg-blue-600 hover:text-white transition-all">Withdraw Funds</button>
             </div>
+
             <div class="glass p-6 rounded-3xl border-b-4 border-green-500">
                 <p class="text-[10px] text-gray-400 font-black mb-1 uppercase tracking-widest">Direct Squad</p>
-                <p id="direct-squad" class="text-2xl font-black italic text-green-400">0</p>
+                <div class="flex items-center justify-center gap-3">
+                    <p id="direct-squad" class="text-2xl font-black italic text-green-400">0</p>
+                    <button onclick="filterSquad('direct')" class="text-green-400/60 hover:text-green-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                </div>
             </div>
+
             <div class="glass p-6 rounded-3xl border-b-4 border-yellow-500">
                 <p class="text-[10px] text-gray-400 font-black mb-1 uppercase tracking-widest">Total Squad Size</p>
-                <p id="total-squad" class="text-2xl font-black italic text-yellow-500">0</p>
+                <div class="flex items-center justify-center gap-3">
+                    <p id="total-squad" class="text-2xl font-black italic text-yellow-500">0</p>
+                    <button onclick="filterSquad('all')" class="text-yellow-500/60 hover:text-yellow-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
 
         <div class="glass p-6 rounded-[2rem] border border-blue-500/10 mb-8">
-            <h3 class="text-blue-500 text-[10px] font-black uppercase tracking-widest mb-4">My Team Upgrades</h3>
+            <h3 id="squad-title" class="text-blue-500 text-[10px] font-black uppercase tracking-widest mb-4">My Team Upgrades</h3>
             <div id="upgraded-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[250px] overflow-y-auto pr-2">
-                <p class="text-gray-600 text-[10px] italic">Syncing squad...</p>
+                <p class="text-gray-600 text-[10px] italic">Connect wallet to view squad...</p>
             </div>
         </div>
 
@@ -93,7 +110,7 @@
                     <span id="new-users-live" class="text-green-400 font-black text-xl">+0</span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-400">Total System Transactions:</span>
+                    <span class="text-sm text-gray-400">Total Transactions:</span>
                     <span id="total-tx-live" class="text-blue-400 font-black text-xl">0</span>
                 </div>
             </div>
@@ -103,9 +120,7 @@
                     <h3 class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Global Payouts Pulse</h3>
                     <span class="flex h-2 w-2 rounded-full bg-green-500 pulse-green"></span>
                 </div>
-                <div id="live-feed" class="space-y-3 overflow-hidden h-[130px] pr-2">
-                    <div class="text-gray-500 text-[10px] italic text-center mt-10">Monitoring blockchain...</div>
-                </div>
+                <div id="live-feed" class="space-y-3 overflow-hidden h-[130px] pr-2"></div>
             </div>
         </div>
 
@@ -113,176 +128,34 @@
     </main>
 
     <script>
-        const LEVEL_PRICES = {
-            1: 1, 2: 2, 3: 4, 4: 8, 5: 10, 6: 12, 7: 21, 8: 24, 9: 30, 10: 40,
-            11: 50, 12: 60, 13: 70, 14: 80, 15: 90, 16: 100, 17: 120, 18: 150, 19: 180, 20: 200
-        };
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
-            authDomain: "ff-fortone.firebaseapp.com",
-            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
-            projectId: "ff-fortone",
-            storageBucket: "ff-fortone.appspot.com",
-            messagingSenderId: "890615410300",
-            appId: "1:890615410300:web:5659f9..."
-        };
-
+        const LEVEL_PRICES = { 1: 1, 2: 2, 3: 4, 4: 8, 5: 10, 6: 12, 7: 21, 8: 24, 9: 30, 10: 40, 11: 50, 12: 60, 13: 70, 14: 80, 15: 90, 16: 100, 17: 120, 18: 150, 19: 180, 20: 200 };
+        const firebaseConfig = { apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", authDomain: "ff-fortone.firebaseapp.com", databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com", projectId: "ff-fortone", storageBucket: "ff-fortone.appspot.com", messagingSenderId: "890615410300", appId: "1:890615410300:web:5659f9..." };
+        
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-main'
-        });
-
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({ manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json', buttonRootId: 'ton-connect-main' });
         const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
+
+        let currentFilter = 'all';
+
+        function filterSquad(type) {
+            currentFilter = type;
+            const titleElement = document.getElementById('squad-title');
+            titleElement.innerText = type === 'direct' ? "Direct Members (Filter Active)" : "All Team Upgrades";
+            // القائمة ستتحدث تلقائياً بسبب مستمع Firebase
+        }
 
         function setupReferralAndTrack(address) {
             let numericString = "";
-            for (let i = 0; i < address.length; i++) {
-                numericString += address.charCodeAt(i).toString();
-            }
+            for (let i = 0; i < address.length; i++) numericString += address.charCodeAt(i).toString();
             let finalId = numericString.slice(-6);
             
             document.getElementById('user-id').innerText = "#" + finalId;
             document.getElementById('ref-link').value = window.location.origin + "/index.html?ref=" + finalId;
 
-            const userRef = database.ref('users/' + address);
-            userRef.once('value').then((snapshot) => {
-                if (!snapshot.exists()) {
-                    const upline = localStorage.getItem('my_upline_id') || "none";
-                    userRef.set({ wallet: address, myId: finalId, upline: upline, level: 0, earnings: 0 });
-                }
-            });
-
             database.ref('users').on('value', (snapshot) => {
                 const allUsers = snapshot.val();
                 let direct = 0; let indirect = 0; let myDirectMembers = [];
                 let totalTx = 0; let usersCount = 0;
-                let squadListHtml = ""; let hasUpgraded = false;
-
-                for (let key in allUsers) {
-                    usersCount++;
-                    if (allUsers[key].upline === finalId) {
-                        direct++;
-                        myDirectMembers.push(allUsers[key].myId);
-                    }
-                    if (allUsers[key].level > 0) totalTx += allUsers[key].level;
-                }
-
-                for (let key in allUsers) {
-                    const user = allUsers[key];
-                    const isDirect = user.upline === finalId;
-                    const isIndirect = myDirectMembers.includes(user.upline);
-                    
-                    if (isDirect || isIndirect) {
-                        if (isIndirect) indirect++;
-                        if (user.level > 0) {
-                            hasUpgraded = true;
-                            squadListHtml += `<div class="flex justify-between items-center bg-white/5 p-3 rounded-2xl border border-white/5"><div class="flex flex-col"><span class="text-[10px] font-bold text-white">ID: #${user.myId}</span><span class="text-[8px] text-gray-500 uppercase">${isDirect ? 'Direct' : 'Indirect'}</span></div><span class="bg-green-500/20 text-green-400 text-[10px] px-3 py-1 rounded-full font-black">LVL ${user.level}</span></div>`;
-                        }
-                    }
-                }
+                let listHtml = ""; let
                 
-                document.getElementById('direct-squad').innerText = direct;
-                document.getElementById('total-squad').innerText = direct + indirect;
-                document.getElementById('new-users-live').innerText = "+" + usersCount;
-                document.getElementById('total-tx-live').innerText = totalTx;
-                document.getElementById('upgraded-list').innerHTML = hasUpgraded ? squadListHtml : `<p class="text-gray-600 text-[10px] italic">No upgrades in squad.</p>`;
-                
-                if (allUsers[address] && allUsers[address].earnings !== undefined) {
-                    document.getElementById('total-earnings').innerText = allUsers[address].earnings.toFixed(2) + " TON";
-                }
-            });
-        }
-
-        async function upgradeLevel(level, price, address) {
-            try {
-                const amountInNano = (price * 1000000000).toString();
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 300,
-                    messages: [{ address: ADMIN_WALLET, amount: amountInNano }]
-                };
-
-                const result = await tonConnectUI.sendTransaction(transaction);
-                if (result) {
-                    await database.ref('users/' + address).update({ level: level });
-                    const userSnap = await database.ref('users/' + address).once('value');
-                    const userData = userSnap.val();
-                    
-                    // 50/50 Profit Distribution
-                    const profitForUpline = price * 0.5;
-                    const uplineId = userData.upline;
-                    if (uplineId && uplineId !== "none") {
-                        const query = database.ref('users').orderByChild('myId').equalTo(uplineId);
-                        const uplineSnap = await query.once('value');
-                        if (uplineSnap.exists()) {
-                            const uplineKey = Object.keys(uplineSnap.val())[0];
-                            await database.ref('users/' + uplineKey + '/earnings').transaction(c => (c || 0) + profitForUpline);
-                        }
-                    }
-                    alert(`Success! Level ${level} Activated. 50% Profit shared.`);
-                }
-            } catch (e) { alert("Transaction failed."); }
-        }
-
-        function renderLevels(address) {
-            const grid = document.getElementById('levelsGrid');
-            database.ref('users/' + address).on('value', (snapshot) => {
-                const userData = snapshot.val();
-                const userLvl = userData ? (userData.level || 0) : 0;
-                grid.innerHTML = "";
-                for (let i = 1; i <= 20; i++) {
-                    let price = LEVEL_PRICES[i]; 
-                    let isActive = i <= userLvl;
-                    grid.innerHTML += `<div class="glass p-6 rounded-[2rem] text-center border ${isActive ? 'border-green-500/30' : 'border-white/5'}"><p class="text-[8px] font-black text-blue-500 mb-2 uppercase italic">Level ${i}</p><p class="text-2xl font-black italic mb-6">${price} <span class="text-xs text-gray-500 uppercase">TON</span></p><button onclick="upgradeLevel(${i}, ${price}, '${address}')" class="w-full py-3 rounded-xl text-[9px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600'}" ${isActive ? 'disabled' : ''}>${isActive ? 'Active' : 'Upgrade'}</button></div>`;
-                }
-            });
-        }
-
-        function startLiveFeed() {
-            database.ref('users').on('child_changed', (snap) => {
-                const user = snap.val();
-                addFeedItem(`ID #${user.myId} UPGRADED TO LVL ${user.level}`, "upgrade");
-            });
-        }
-
-        function addFeedItem(text, type) {
-            const feed = document.getElementById('live-feed');
-            const item = document.createElement('div');
-            item.className = `reward-card flex items-center justify-between bg-white/5 p-2 rounded-xl border-l-4 ${type === 'upgrade' ? 'border-blue-500' : 'border-green-500'} mb-2`;
-            item.innerHTML = `<div class="flex items-center gap-2"><span>🚀</span><div class="flex flex-col"><span class="text-[9px] text-white font-bold">${text}</span><span class="text-[7px] text-gray-500 uppercase">${new Date().toLocaleTimeString()}</span></div></div><div class="text-[8px] font-black text-blue-400 bg-blue-400/10 px-2 py-1 rounded-md">VERIFIED</div>`;
-            feed.prepend(item);
-            if (feed.children.length > 5) feed.lastChild.remove();
-        }
-
-        tonConnectUI.onStatusChange(wallet => {
-            if (wallet) {
-                setupReferralAndTrack(wallet.account.address);
-                renderLevels(wallet.account.address);
-                startLiveFeed();
-            } else { window.location.href = 'index.html'; }
-        });
-
-        function copyRef() {
-            const copyText = document.getElementById("ref-link");
-            copyText.select();
-            document.execCommand("copy");
-            alert("Referral Link Copied!");
-        }
-        
-        async function withdrawEarnings() {
-            const wallet = tonConnectUI.wallet;
-            if (!wallet) return alert("Please connect wallet first.");
-            const address = wallet.account.address;
-            const snap = await database.ref('users/' + address).once('value');
-            const earnings = snap.val().earnings || 0;
-            if (earnings < 0.1) return alert("Minimum withdrawal is 0.1 TON");
-            alert(`Withdrawal request for ${earnings.toFixed(2)} TON sent.`);
-            await database.ref('users/' + address).update({ earnings: 0 });
-        }
-    </script>
-</body>
-                    </html>
-    
