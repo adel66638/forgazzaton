@@ -1,83 +1,79 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الترقية الذكي</title>
+    <title>ZzaTon System</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; padding: 20px; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: inline-block; }
-        .level-card { border: 1px solid #ddd; padding: 15px; margin: 10px; border-radius: 8px; display: inline-block; width: 200px; }
-        .btn-upgrade { background-color: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        .btn-upgrade:hover { background-color: #006699; }
+        /* هذا الجزء يضمن بقاء التصميم طبق الأصل كما في صورك */
+        body { background-color: #0d0d0d; color: #ffffff; font-family: sans-serif; margin: 0; padding: 20px; text-align: center; }
+        .header { margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 500px; margin: 0 auto; }
+        .card { background-color: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 15px; position: relative; }
+        .level-tag { color: #0088cc; font-weight: bold; font-size: 14px; }
+        .price-tag { font-size: 20px; margin: 10px 0; font-weight: bold; }
+        .btn-upgrade { background-color: #0088cc; color: white; border: none; padding: 8px 0; width: 100%; border-radius: 6px; cursor: pointer; font-size: 14px; text-transform: uppercase; font-weight: bold; }
+        .btn-upgrade:hover { background-color: #00aaff; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>لوحة ترقية المستويات</h1>
-        <p>اختر المستوى الذي ترغب بالترقية إليه:</p>
-
-        <div class="level-card">
-            <h3>المستوى 1</h3>
-            <p>السعر: 1 TON</p>
-            <button class="btn-upgrade" onclick="processUpgrade(1)">ترقية الآن</button>
-        </div>
-
-        <div class="level-card">
-            <h3>المستوى 10</h3>
-            <p>السعر: 40 TON</p>
-            <button class="btn-upgrade" onclick="processUpgrade(10)">ترقية الآن</button>
-        </div>
-
-        <div class="level-card">
-            <h3>المستوى 20</h3>
-            <p>السعر: 200 TON</p>
-            <button class="btn-upgrade" onclick="processUpgrade(20)">ترقية الآن</button>
-        </div>
+    <div class="header">
+        <h1>ZZATON LEVELS</h1>
     </div>
 
+    <div class="grid" id="levelsGrid">
+        </div>
+
     <script>
-        // 1. جدول الأسعار بناءً على الصور التي أرسلتها
-        const upgradePrices = {
+        // جدول الأسعار الدقيق من صورك
+        const prices = {
             1:1, 2:2, 3:4, 4:8, 5:10, 6:12, 7:21, 8:24, 9:30, 10:40,
             11:50, 12:60, 13:70, 14:80, 15:90, 16:100, 17:120, 18:150, 19:180, 20:200
         };
 
-        // 2. وظيفة إرسال الطلب
-        async function processUpgrade(level) {
-            const totalAmount = upgradePrices[level];
-            
-            // محفظة المستخدم (التي سيرجع لها 0.2 في المستوى الأول)
-            const userWallet = "UQ_USER_ADDRESS_HERE"; 
-            // محفظة المحيل (التي سيأخذ 50% في بقية المستويات)
-            const refWallet = "UQ_REFERRER_ADDRESS_HERE";
+        // بناء الواجهة طبق الأصل
+        const grid = document.getElementById('levelsGrid');
+        for (let i = 1; i <= 20; i++) {
+            grid.innerHTML += `
+                <div class="card">
+                    <div class="level-tag">Level ${i}</div>
+                    <div class="price-tag">${prices[i]} TON</div>
+                    <button class="btn-upgrade" onclick="requestUpgrade(${i})">Upgrade</button>
+                </div>
+            `;
+        }
 
-            // تطبيق معادلة الـ 50%
-            let targetWallet = (level === 1) ? userWallet : refWallet;
-            let shareAmount = (level === 1) ? 0.2 : (totalAmount * 0.5);
-            let actionText = (level === 1) ? "إرجاع 0.2 للمشترك" : `إرسال ${shareAmount} TON للمحيل (50%)`;
+        // دالة الإرسال لتلجرام (المحرك)
+        async function requestUpgrade(level) {
+            const amount = prices[level];
+            const userWallet = "UQ_USER_ADDR"; // ستتغير تلقائياً حسب المستخدم
+            const refWallet = "UQ_REF_ADDR";   // محفظة المحيل
 
-            // إرسال البيانات إلى ملف الـ API في Vercel
+            // قاعدة الـ 50% التي طلبتها
+            let target = (level === 1) ? userWallet : refWallet;
+            let share = (level === 1) ? 0.2 : (amount * 0.5);
+            let messageText = (level === 1) ? "إرجاع 0.2 TON للمشترك" : `إرسال ${share} TON للمحيل (50%)`;
+
             try {
                 const response = await fetch('/api/notify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         level: level,
-                        total: totalAmount,
-                        wallet: targetWallet,
-                        instruction: actionText
+                        amount: amount,
+                        wallet: target,
+                        instruction: messageText
                     })
                 });
 
                 if (response.ok) {
-                    alert("✅ تم إرسال طلبك للمسؤول. سيتم التحويل اليدوي قريباً.");
+                    alert("✅ تم إرسال الطلب للمسؤول بنجاح!");
                 } else {
-                    alert("❌ فشل الاتصال. تأكد من إعدادات Vercel.");
+                    alert("❌ خطأ: تأكد من إعدادات Vercel");
                 }
-            } catch (error) {
-                alert("⚠️ حدث خطأ غير متوقع.");
+            } catch (err) {
+                alert("⚠️ فشل الاتصال بالسيرفر");
             }
         }
     </script>
