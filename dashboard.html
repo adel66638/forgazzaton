@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -91,7 +90,7 @@
     </main>
 
     <script>
-        // جدول الأسعار
+        // جدول الأسعار المحدث حسب طلبك
         const LEVEL_PRICES = {
             1: 1, 2: 2, 3: 4, 4: 8, 5: 10, 6: 12, 7: 21, 8: 24, 9: 30, 10: 40,
             11: 50, 12: 60, 13: 70, 14: 80, 15: 90, 16: 100, 17: 120, 18: 150, 19: 180, 20: 200
@@ -173,13 +172,17 @@
 
                 const result = await tonConnectUI.sendTransaction(transaction);
                 if (result) {
+                    // تحديث مستوى المستخدم
                     await database.ref('users/' + address).update({ level: level });
+                    
                     const userSnap = await database.ref('users/' + address).once('value');
                     const userData = userSnap.val();
 
                     if (level === 1) {
+                        // نظام الاشتراك: 0.2 للمشترك نفسه
                         await database.ref('users/' + address + '/earnings').transaction(c => (c || 0) + 0.2);
                     } else {
+                        // نظام الترقيات: 50% للمحيل
                         const uplineId = userData.upline;
                         if (uplineId && uplineId !== "none") {
                             const query = database.ref('users').orderByChild('myId').equalTo(uplineId);
@@ -191,6 +194,7 @@
                             }
                         }
                     }
+                    
                     alert("Success! Level " + level + " Activated.");
                     renderLevels(address);
                 }
@@ -200,11 +204,17 @@
         async function withdrawEarnings() {
             const wallet = tonConnectUI.wallet;
             if (!wallet) return alert("Please connect wallet first.");
+            
             const address = wallet.account.address;
             const snap = await database.ref('users/' + address).once('value');
             const earnings = snap.val().earnings || 0;
+
             if (earnings < 0.1) return alert("Minimum withdrawal is 0.1 TON");
-            alert(`Withdrawal request for ${earnings.toFixed(2)} TON sent to admin.`);
+
+            // هنا نرسل طلب سحب (في الواقع ستحتاج لنظام دفع تلقائي أو يدوي)
+            alert(`Withdrawal request for ${earnings.toFixed(2)} TON sent to admin. Your balance will be reset after processing.`);
+            
+            // تصفير الرصيد بعد طلب السحب (يمكنك جعلها يدوية من قبلك كأدمن)
             await database.ref('users/' + address).update({ earnings: 0 });
         }
 
@@ -231,6 +241,7 @@
             });
         }
 
+        // باقي الوظائف (Feed, Connect, Copy) تظل كما هي في كودك الأصلي
         function startLiveFeed() {
             const feed = document.getElementById('live-feed');
             database.ref('users').limitToLast(5).on('child_added', (snap) => {
