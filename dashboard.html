@@ -17,8 +17,8 @@
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .animate-fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        #live-feed::-webkit-scrollbar { width: 4px; }
-        #live-feed::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.5); border-radius: 10px; }
+        #live-feed::-webkit-scrollbar, #upgraded-list::-webkit-scrollbar { width: 4px; }
+        #live-feed::-webkit-scrollbar-thumb, #upgraded-list::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.5); border-radius: 10px; }
     </style>
 </head>
 <body class="pb-10">
@@ -65,6 +65,13 @@
             </div>
         </div>
 
+        <div class="glass p-6 rounded-[2rem] border border-blue-500/10 mb-8">
+            <h3 class="text-blue-500 text-[10px] font-black uppercase tracking-widest mb-4">My Team (Upgraded Members)</h3>
+            <div id="upgraded-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-2">
+                <p class="text-gray-600 text-[10px] italic">Waiting for connection...</p>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
             <div class="glass p-6 rounded-[2rem] border border-blue-500/10 flex flex-col justify-center">
                 <h3 class="text-blue-500 text-[10px] font-black uppercase tracking-widest mb-4">Global Network Growth</h3>
@@ -90,7 +97,6 @@
     </main>
 
     <script>
-        // جدول الأسعار المحدث حسب طلبك
         const LEVEL_PRICES = {
             1: 1, 2: 2, 3: 4, 4: 8, 5: 10, 6: 12, 7: 21, 8: 24, 9: 30, 10: 40,
             11: 50, 12: 60, 13: 70, 14: 80, 15: 90, 16: 100, 17: 120, 18: 150, 19: 180, 20: 200
@@ -138,7 +144,8 @@
                 const allUsers = snapshot.val();
                 let direct = 0; let indirect = 0; let myDirectMembers = [];
                 let totalTx = 0; let usersCount = 0;
-
+                
+                // حساب الفريق المباشر
                 for (let key in allUsers) {
                     usersCount++;
                     if (allUsers[key].upline === finalId) {
@@ -147,14 +154,42 @@
                     }
                     if (allUsers[key].level > 0) totalTx += allUsers[key].level;
                 }
+                
+                // حساب الفريق غير المباشر وتجهيز قائمة المترقين
+                let listHtml = "";
+                let hasUpgraded = false;
+
                 for (let key in allUsers) {
-                    if (myDirectMembers.includes(allUsers[key].upline)) indirect++;
+                    const user = allUsers[key];
+                    const isDirect = user.upline === finalId;
+                    const isIndirect = myDirectMembers.includes(user.upline);
+                    
+                    if (isDirect || isIndirect) {
+                        if (isIndirect) indirect++;
+                        
+                        // إضافة للقائمة إذا كان مستواه أكبر من 0
+                        if (user.level > 0) {
+                            hasUpgraded = true;
+                            listHtml += `
+                                <div class="flex justify-between items-center bg-white/5 p-3 rounded-2xl border border-white/5 animate-fade-in">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-bold text-white">ID: #${user.myId}</span>
+                                        <span class="text-[8px] text-gray-500 uppercase">${isDirect ? 'Direct' : 'Indirect'}</span>
+                                    </div>
+                                    <span class="bg-green-500/20 text-green-400 text-[10px] px-3 py-1 rounded-full font-black italic">LVL ${user.level}</span>
+                                </div>`;
+                        }
+                    }
                 }
                 
                 document.getElementById('direct-squad').innerText = direct;
                 document.getElementById('total-squad').innerText = direct + indirect;
                 document.getElementById('new-users-live').innerText = "+" + usersCount;
                 document.getElementById('total-tx-live').innerText = totalTx;
+                
+                // تحديث قائمة المترقين في الواجهة
+                const upgradedListDiv = document.getElementById('upgraded-list');
+                upgradedListDiv.innerHTML = hasUpgraded ? listHtml : `<p class="text-gray-600 text-[10px] italic">No upgraded members in your squad yet.</p>`;
                 
                 if (allUsers[address] && allUsers[address].earnings !== undefined) {
                     document.getElementById('total-earnings').innerText = allUsers[address].earnings.toFixed(2) + " TON";
@@ -172,17 +207,13 @@
 
                 const result = await tonConnectUI.sendTransaction(transaction);
                 if (result) {
-                    // تحديث مستوى المستخدم
                     await database.ref('users/' + address).update({ level: level });
-                    
                     const userSnap = await database.ref('users/' + address).once('value');
                     const userData = userSnap.val();
 
                     if (level === 1) {
-                        // نظام الاشتراك: 0.2 للمشترك نفسه
                         await database.ref('users/' + address + '/earnings').transaction(c => (c || 0) + 0.2);
                     } else {
-                        // نظام الترقيات: 50% للمحيل
                         const uplineId = userData.upline;
                         if (uplineId && uplineId !== "none") {
                             const query = database.ref('users').orderByChild('myId').equalTo(uplineId);
@@ -194,9 +225,7 @@
                             }
                         }
                     }
-                    
                     alert("Success! Level " + level + " Activated.");
-                    renderLevels(address);
                 }
             } catch (e) { alert("Transaction failed."); }
         }
@@ -204,17 +233,11 @@
         async function withdrawEarnings() {
             const wallet = tonConnectUI.wallet;
             if (!wallet) return alert("Please connect wallet first.");
-            
             const address = wallet.account.address;
             const snap = await database.ref('users/' + address).once('value');
             const earnings = snap.val().earnings || 0;
-
             if (earnings < 0.1) return alert("Minimum withdrawal is 0.1 TON");
-
-            // هنا نرسل طلب سحب (في الواقع ستحتاج لنظام دفع تلقائي أو يدوي)
-            alert(`Withdrawal request for ${earnings.toFixed(2)} TON sent to admin. Your balance will be reset after processing.`);
-            
-            // تصفير الرصيد بعد طلب السحب (يمكنك جعلها يدوية من قبلك كأدمن)
+            alert(`Withdrawal request for ${earnings.toFixed(2)} TON sent. Balance reset.`);
             await database.ref('users/' + address).update({ earnings: 0 });
         }
 
@@ -241,13 +264,7 @@
             });
         }
 
-        // باقي الوظائف (Feed, Connect, Copy) تظل كما هي في كودك الأصلي
         function startLiveFeed() {
-            const feed = document.getElementById('live-feed');
-            database.ref('users').limitToLast(5).on('child_added', (snap) => {
-                const user = snap.val();
-                addFeedItem(`🟢 New Member joined: ID #${user.myId}`, "text-green-400");
-            });
             database.ref('users').on('child_changed', (snap) => {
                 const user = snap.val();
                 addFeedItem(`🔥 ID #${user.myId} upgraded to Level ${user.level}`, "text-blue-400");
