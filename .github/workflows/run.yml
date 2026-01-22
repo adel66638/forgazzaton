@@ -1,0 +1,26 @@
+name: TON Bot Runner
+on:
+  schedule:
+    - cron: '*/15 * * * *' # سيعمل البوت تلقائياً كل 15 دقيقة
+  workflow_dispatch: # زر لتشغيل البوت يدوياً في أي وقت
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install TonTools
+        run: pip install TonTools
+
+      - name: Run Python Script
+        env:
+          BOT_SEED: ${{ secrets.BOT_SEED }}
+          TON_API_KEY: ${{ secrets.TON_API_KEY }}
+        run: python bot.py
