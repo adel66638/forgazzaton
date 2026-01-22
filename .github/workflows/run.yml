@@ -1,8 +1,8 @@
 name: TON Bot Runner
 on:
   schedule:
-    - cron: '*/15 * * * *' # سيعمل البوت تلقائياً كل 15 دقيقة
-  workflow_dispatch: # زر لتشغيل البوت يدوياً في أي وقت
+    - cron: '*/5 * * * *' # تشغيل آلي كل 5 دقائق
+  workflow_dispatch: # زر للتشغيل اليدوي
 
 jobs:
   run-bot:
@@ -16,10 +16,12 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install TonTools
-        run: pip install TonTools
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install TonTools asyncio
 
-      - name: Run Python Script
+      - name: Run Bot Script
         env:
           BOT_SEED: ${{ secrets.BOT_SEED }}
           TON_API_KEY: ${{ secrets.TON_API_KEY }}
