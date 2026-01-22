@@ -1,110 +1,83 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE FREE | Professional TON Platform</title>
-    
-    <link rel="icon" type="image/png" href="Screenshot_2026-01-20-23-43-19-142_com.android.chrome.jpg">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>نظام الترقية الذكي</title>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #010413; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .hero-gradient { background: radial-gradient(circle at center, #1e40af 0%, #010413 75%); }
-        .ton-3d { width: 80px; height: 80px; filter: drop-shadow(0 0 15px rgba(0, 152, 234, 0.6)); display: inline-block; vertical-align: middle; margin: 0 15px; }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: inline-block; }
+        .level-card { border: 1px solid #ddd; padding: 15px; margin: 10px; border-radius: 8px; display: inline-block; width: 200px; }
+        .btn-upgrade { background-color: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .btn-upgrade:hover { background-color: #006699; }
     </style>
 </head>
-<body class="text-white overflow-x-hidden">
+<body>
 
-    <div class="fixed inset-0 hero-gradient -z-10 opacity-60"></div>
+    <div class="container">
+        <h1>لوحة ترقية المستويات</h1>
+        <p>اختر المستوى الذي ترغب بالترقية إليه:</p>
 
-    <nav class="flex justify-between items-center p-6 max-w-7xl mx-auto">
-        <div class="text-2xl font-black text-white italic flex items-center tracking-tighter uppercase">
-            <span class="text-blue-500">FF</span> 
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-8 h-8 mx-2" alt="TON"> 
-            FORTONE
+        <div class="level-card">
+            <h3>المستوى 1</h3>
+            <p>السعر: 1 TON</p>
+            <button class="btn-upgrade" onclick="processUpgrade(1)">ترقية الآن</button>
         </div>
-        <div id="ton-connect-btn"></div>
-    </nav>
 
-    <main class="flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
-        <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tighter uppercase italic">
-            FF <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="ton-3d animate-pulse"> FORTONE
-        </h1>
-
-        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl border-blue-500/20">
-            <div class="flex justify-between items-center mb-10">
-                <div class="text-left">
-                    <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">Entry Ticket</p>
-                    <p class="text-4xl font-black italic">1.00 <span class="text-blue-500 text-xl">TON</span></p>
-                </div>
-                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-14 h-14">
-            </div>
-
-            <button id="mainActionButton" onclick="handleMainAction()" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-sm uppercase italic tracking-widest transition-all shadow-[0_15px_30px_rgba(37,99,235,0.3)]">
-                <span id="buttonText">Connect Wallet</span>
-            </button>
+        <div class="level-card">
+            <h3>المستوى 10</h3>
+            <p>السعر: 40 TON</p>
+            <button class="btn-upgrade" onclick="processUpgrade(10)">ترقية الآن</button>
         </div>
-    </main>
+
+        <div class="level-card">
+            <h3>المستوى 20</h3>
+            <p>السعر: 200 TON</p>
+            <button class="btn-upgrade" onclick="processUpgrade(20)">ترقية الآن</button>
+        </div>
+    </div>
 
     <script>
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn'
-        });
+        // 1. جدول الأسعار بناءً على الصور التي أرسلتها
+        const upgradePrices = {
+            1:1, 2:2, 3:4, 4:8, 5:10, 6:12, 7:21, 8:24, 9:30, 10:40,
+            11:50, 12:60, 13:70, 14:80, 15:90, 16:100, 17:120, 18:150, 19:180, 20:200
+        };
 
-        window.addEventListener('load', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const ref = urlParams.get('ref');
-            if (ref) {
-                localStorage.setItem('my_upline_id', ref);
-                console.log("Referral ID Detected & Saved: " + ref);
-            }
-        });
+        // 2. وظيفة إرسال الطلب
+        async function processUpgrade(level) {
+            const totalAmount = upgradePrices[level];
+            
+            // محفظة المستخدم (التي سيرجع لها 0.2 في المستوى الأول)
+            const userWallet = "UQ_USER_ADDRESS_HERE"; 
+            // محفظة المحيل (التي سيأخذ 50% في بقية المستويات)
+            const refWallet = "UQ_REFERRER_ADDRESS_HERE";
 
-        tonConnectUI.onStatusChange(wallet => {
-            const btnText = document.getElementById('buttonText');
-            if (wallet) {
-                const address = wallet.account.address;
-                const hasPaid = localStorage.getItem('user_paid_' + address);
-                btnText.innerText = hasPaid ? "Open Dashboard" : "Pay 1 TON to Join";
-            } else {
-                btnText.innerText = "Connect Wallet";
-            }
-        });
+            // تطبيق معادلة الـ 50%
+            let targetWallet = (level === 1) ? userWallet : refWallet;
+            let shareAmount = (level === 1) ? 0.2 : (totalAmount * 0.5);
+            let actionText = (level === 1) ? "إرجاع 0.2 للمشترك" : `إرسال ${shareAmount} TON للمحيل (50%)`;
 
-        async function handleMainAction() {
-            if (!tonConnectUI.connected) {
-                await tonConnectUI.openModal();
-                return;
-            }
-
-            const address = tonConnectUI.wallet.account.address;
-
-            if (localStorage.getItem('user_paid_' + address)) {
-                window.location.href = 'dashboard.html';
-                return;
-            }
-
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 360,
-                messages: [{
-                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx",
-                    amount: "1000000000" // 1 TON
-                }]
-            };
-
+            // إرسال البيانات إلى ملف الـ API في Vercel
             try {
-                const result = await tonConnectUI.sendTransaction(transaction);
-                if (result) {
-                    localStorage.setItem('user_paid_' + address, 'true');
-                    window.location.href = 'dashboard.html';
+                const response = await fetch('/api/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        level: level,
+                        total: totalAmount,
+                        wallet: targetWallet,
+                        instruction: actionText
+                    })
+                });
+
+                if (response.ok) {
+                    alert("✅ تم إرسال طلبك للمسؤول. سيتم التحويل اليدوي قريباً.");
+                } else {
+                    alert("❌ فشل الاتصال. تأكد من إعدادات Vercel.");
                 }
-            } catch (e) {
-                alert("Payment Pending: Please confirm in your wallet.");
+            } catch (error) {
+                alert("⚠️ حدث خطأ غير متوقع.");
             }
         }
     </script>
