@@ -88,15 +88,16 @@
     </div>
 
     <script>
-        // --- إعدادات المحفظة والأسعار ---
-        const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
+        // --- إعدادات المحافظ ---
+        const MY_PERSONAL_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
+        const POOL_WALLET = "UQCynb1kgftPUU-52BHZZMSKZu-TgXaPgjqXVVNOXqX0Fcau"; // محفظة الصندوق 15%
 
         const LEVEL_PRICES = {
             1:1, 2:2, 3:4, 4:8, 5:10, 6:12, 7:21, 8:24, 9:30, 10:40,
             11:50, 12:60, 13:70, 14:80, 15:90, 16:100, 17:120, 18:150, 19:180, 20:200
         };
 
-        // --- إعدادات Firebase ---
+        // --- Firebase Config كما هي ---
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -114,6 +115,18 @@
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-main'
         });
+
+        // تحديث الرصيد الحقيقي من المحفظة
+        async function fetchRealBalance(address) {
+            try {
+                const response = await fetch(`https://toncenter.com/api/v2/getAddressInformation?address=${address}`);
+                const data = await response.json();
+                if (data.ok) {
+                    const balance = (data.result.balance / 1000000000).toFixed(2);
+                    document.getElementById('total-earnings').innerText = balance + " TON";
+                }
+            } catch (e) { console.error("Balance fetch error"); }
+        }
 
         function setupReferralAndTrack(address) {
             let numericString = "";
@@ -141,59 +154,54 @@
                 
                 document.getElementById('direct-squad').innerText = direct;
                 document.getElementById('total-squad').innerText = direct + indirect;
-                
-                if (allUsers[address]) {
-                    document.getElementById('total-earnings').innerText = (allUsers[address].earnings || 0).toFixed(2) + " TON";
-                }
             });
+            
+            // جلب الرصيد الحقيقي كل 10 ثواني
+            fetchRealBalance(address);
+            setInterval(() => fetchRealBalance(address), 10000);
         }
 
         async function upgradeLevel(level, price, address) {
             try {
-                const amountInNano = (price * 1000000000).toString();
+                const userSnap = await database.ref('users/' + address).once('value');
+                const userData = userSnap.val();
+                const uplineId = userData.upline;
+
+                // البحث عن عنوان محفظة الداعي (Upline)
+                let referrerWallet = MY_PERSONAL_WALLET; // افتراضياً تذهب لك إذا لم يوجد داعي
+                if (uplineId && uplineId !== "none") {
+                    const q = database.ref('users').orderByChild('myId').equalTo(uplineId);
+                    const qSnap = await q.once('value');
+                    if (qSnap.exists()) {
+                        referrerWallet = Object.keys(qSnap.val())[0];
+                    }
+                }
+
+                // الحسابات: 50% للداعي، 35% لك، 15% للصندوق
+                const amount50 = (price * 0.5 * 1000000000).toFixed(0);
+                const amount35 = (price * 0.35 * 1000000000).toFixed(0);
+                const amount15 = (price * 0.15 * 1000000000).toFixed(0);
+
                 const transaction = {
                     validUntil: Math.floor(Date.now() / 1000) + 300,
-                    messages: [{ address: ADMIN_WALLET, amount: amountInNano }]
+                    messages: [
+                        { address: referrerWallet, amount: amount50 },
+                        { address: MY_PERSONAL_WALLET, amount: amount35 },
+                        { address: POOL_WALLET, amount: amount15 }
+                    ]
                 };
                 
                 const result = await tonConnectUI.sendTransaction(transaction);
                 if (result) {
-                    const userRef = database.ref('users/' + address);
-                    const userSnap = await userRef.once('value');
-                    const userData = userSnap.val();
-
-                    await userRef.update({ level: level });
-
-                    if (level === 1) {
-                        await userRef.child('earnings').transaction(c => (c || 0) + 0.2);
-                        document.getElementById('welcome-modal').classList.remove('hidden');
-                    } else {
-                        const uplineId = userData.upline;
-                        if (uplineId && uplineId !== "none") {
-                            const query = database.ref('users').orderByChild('myId').equalTo(uplineId);
-                            const uplineSnap = await query.once('value');
-                            if (uplineSnap.exists()) {
-                                const uplineKey = Object.keys(uplineSnap.val())[0];
-                                await database.ref('users/' + uplineKey + '/earnings').transaction(c => (c || 0) + (price * 0.5));
-                            }
-                        }
-                    }
+                    await database.ref('users/' + address).update({ level: level });
+                    if (level === 1) document.getElementById('welcome-modal').classList.remove('hidden');
                     alert("Success! Level " + level + " Activated.");
                 }
-            } catch (e) { alert("Transaction failed or cancelled."); }
+            } catch (e) { alert("Transaction failed."); }
         }
 
         async function withdrawEarnings() {
-            const wallet = tonConnectUI.wallet;
-            if (!wallet) return alert("Connect Wallet!");
-            const address = wallet.account.address;
-            const snap = await database.ref('users/' + address).once('value');
-            const earnings = snap.val().earnings || 0;
-
-            if (earnings < 0.1) return alert("Minimum withdrawal is 0.1 TON");
-
-            alert(`Withdrawal request for ${earnings.toFixed(2)} TON sent. Funds will arrive shortly.`);
-            await database.ref('users/' + address).update({ earnings: 0 });
+            alert("Funds are already in your wallet! Total Earnings shows your actual TON balance.");
         }
 
         function renderLevels(address) {
@@ -232,5 +240,5 @@
         function copyRef() { const c = document.getElementById("ref-link"); c.select(); document.execCommand("copy"); alert("Copied!"); }
     </script>
 </body>
-    </html>
-    
+        </html>
+            
