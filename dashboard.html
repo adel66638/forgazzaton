@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | FF FORTONE</title>
+    <link rel="icon" type="image/png" href="Screenshot_2026-01-20-23-43-19-142_com.android.chrome.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -15,38 +16,46 @@
 </head>
 <body class="pb-10">
 
-    <header class="max-w-7xl mx-auto flex justify-between items-center p-6 glass rounded-[2rem] mt-4 mx-4">
-        <div class="flex items-center gap-2 font-black text-xl italic uppercase">
+    <header class="max-w-7xl mx-auto flex justify-between items-center p-6 glass rounded-[2rem] mt-4 mx-4 border border-white/5">
+        <div class="flex items-center gap-2 font-black text-xl italic uppercase text-white">
             <span class="text-blue-500">FF</span>
+            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-7 h-7">
             <span>FORTONE</span>
         </div>
         <div id="ton-connect-main"></div>
     </header>
 
-    <main class="max-w-7xl mx-auto mt-10 px-4 text-center">
-        <div class="glass p-6 rounded-[2.5rem] mb-8 border border-blue-500/20">
-            <p class="text-blue-500 text-[10px] font-black uppercase mb-1">Your ID</p>
-            <p id="user-id" class="text-3xl font-black italic mb-1">#000000</p>
-            <p class="text-[10px] text-gray-500 font-bold mb-6 uppercase">
-                Invited By: <span id="upline-id-val" class="text-blue-400">#------</span>
-            </p>
+    <main class="max-w-7xl mx-auto mt-10 px-4">
+        <div class="glass p-8 rounded-[3rem] mb-8 border border-blue-500/20 text-center shadow-2xl shadow-blue-500/5">
+            <p class="text-blue-500 text-[10px] font-black uppercase mb-1 tracking-[0.3em]">Your Digital ID</p>
+            <p id="user-id" class="text-4xl font-black italic mb-1 tracking-tighter text-white">#000000</p>
+            
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 rounded-full border border-white/10 mb-6">
+                <span class="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Invited By:</span>
+                <span id="upline-id-val" class="text-[11px] text-blue-400 font-black">#------</span>
+            </div>
 
-            <input id="ref-link" readonly class="bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-full max-w-sm text-xs text-blue-300 text-center outline-none mb-4">
-            <button onclick="copyRef()" class="block mx-auto bg-blue-600 px-8 py-2 rounded-xl text-[10px] font-black uppercase">Copy Link</button>
+            <div class="max-w-md mx-auto">
+                <p class="text-gray-500 text-[9px] font-black uppercase mb-2 tracking-widest">Your Referral Link</p>
+                <div class="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
+                    <input id="ref-link" readonly class="bg-transparent border-none rounded-xl px-4 py-2 w-full text-xs text-blue-300 outline-none">
+                    <button onclick="copyRef()" class="bg-blue-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20">Copy</button>
+                </div>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 font-black">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center font-black uppercase italic">
             <div class="glass p-6 rounded-3xl border-b-4 border-blue-500">
-                <p class="text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Total Earned (to wallet)</p>
-                <p id="total-earnings" class="text-2xl">0.00 TON</p>
+                <p class="text-[10px] text-gray-400 mb-1 tracking-widest">Total Earned (To Wallet)</p>
+                <p id="total-earnings" class="text-2xl text-white">0.00 TON</p>
             </div>
             <div class="glass p-6 rounded-3xl border-b-4 border-green-500 text-green-400">
-                <p class="text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Direct Squad</p>
+                <p class="text-[10px] text-gray-400 mb-1 tracking-widest">Direct Squad</p>
                 <p id="direct-squad" class="text-2xl">0</p>
             </div>
             <div class="glass p-6 rounded-3xl border-b-4 border-yellow-500 text-yellow-500">
-                <p class="text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Total Squad</p>
-                <p id="total-squad" class="text-2xl">0</p>
+                <p class="text-[10px] text-gray-400 mb-1 tracking-widest">Global Status</p>
+                <p class="text-2xl text-yellow-500">ACTIVE</p>
             </div>
         </div>
 
@@ -54,10 +63,23 @@
     </main>
 
     <script>
-        const LEVEL_PRICES = { 1:1, 2:2, 3:4, 4:8, 5:10, 6:12, 7:21, 8:24, 9:30, 10:40 }; // اختصار للأمثلة
+        const LEVEL_PRICES = {
+            1: 1, 2: 2, 3: 4, 4: 8, 5: 10, 6: 12, 7: 21, 8: 24, 9: 30, 10: 40,
+            11: 50, 12: 60, 13: 70, 14: 80, 15: 90, 16: 100, 17: 120, 18: 150, 19: 180, 20: 200
+        };
+
         const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx";
 
-        const firebaseConfig = { /* استخدم إعداداتك هنا */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
+            authDomain: "ff-fortone.firebaseapp.com",
+            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
+            projectId: "ff-fortone",
+            storageBucket: "ff-fortone.appspot.com",
+            messagingSenderId: "890615410300",
+            appId: "1:890615410300:web:5659f9..."
+        };
+
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -72,7 +94,6 @@
                 const userData = userSnap.val();
                 let uplineWallet = ADMIN_WALLET;
 
-                // البحث عن محفظة المحيل الحقيقية
                 if (userData.upline && userData.upline !== "none") {
                     const q = await database.ref('users').orderByChild('myId').equalTo(userData.upline).once('value');
                     if (q.exists()) {
@@ -93,14 +114,13 @@
                 const result = await tonConnectUI.sendTransaction(transaction);
                 if (result) {
                     await database.ref('users/' + address).update({ level: level });
-                    // تحديث عداد الأرباح للعرض فقط
                     if (uplineWallet !== ADMIN_WALLET) {
                         await database.ref('users/' + uplineWallet + '/earnings').transaction(c => (c || 0) + (price * 0.5));
                     }
-                    alert("Upgrade Success! Profit sent directly to wallets.");
+                    alert("Upgrade Successful! Profits sent to wallets.");
                     location.reload();
                 }
-            } catch (e) { alert("Failed."); }
+            } catch (e) { alert("Transaction Failed."); }
         }
 
         function setupReferralAndTrack(address) {
@@ -131,15 +151,15 @@
             database.ref('users/' + address).on('value', (snap) => {
                 const userLvl = snap.val() ? (snap.val().level || 0) : 0;
                 grid.innerHTML = "";
-                for (let i = 1; i <= 10; i++) {
+                for (let i = 1; i <= 20; i++) {
                     let price = LEVEL_PRICES[i]; 
                     let isActive = i <= userLvl;
                     grid.innerHTML += `
-                        <div class="glass p-6 rounded-[2rem] border ${isActive ? 'border-green-500/30' : 'border-white/5'}">
-                            <p class="text-[8px] font-black text-blue-500 mb-2 italic">LEVEL ${i}</p>
-                            <p class="text-2xl font-black italic mb-6">${price} TON</p>
+                        <div class="glass p-6 rounded-[2rem] text-center border ${isActive ? 'border-green-500/30' : 'border-white/5'}">
+                            <p class="text-[8px] font-black text-blue-500 mb-2 uppercase italic tracking-widest">Level ${i}</p>
+                            <p class="text-2xl font-black italic mb-6 text-white">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
                             <button onclick="upgradeLevel(${i}, ${price}, '${address}')" 
-                                class="w-full py-3 rounded-xl text-[9px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600'}" 
+                                class="w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-widest ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600 shadow-lg shadow-blue-600/20'}" 
                                 ${isActive ? 'disabled' : ''}>${isActive ? 'Active' : 'Upgrade'}</button>
                         </div>`;
                 }
@@ -155,7 +175,7 @@
             const copyText = document.getElementById("ref-link");
             copyText.select();
             document.execCommand("copy");
-            alert("Copied!");
+            alert("Referral Link Copied!");
         }
     </script>
 </body>
