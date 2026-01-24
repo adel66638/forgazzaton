@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,18 +12,19 @@
 <body class="bg-[#010413] text-white flex flex-col items-center justify-center min-h-screen">
 
     <div class="text-center p-10 bg-white/5 rounded-[3rem] border border-white/10 shadow-2xl">
-        <h1 class="text-4xl font-black mb-8 italic uppercase">FF <span class="text-blue-500">FORTONE</span></h1>
+        <h1 class="text-4xl font-black mb-8 italic uppercase text-blue-500">FF FORTONE</h1>
         
         <div id="ton-connect-btn" class="mb-8 flex justify-center"></div>
 
         <button id="pay-btn" onclick="payToJoin()" class="hidden w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl transition-all shadow-lg">
-            ACTIVATE LEVEL 1 (1 TON)
+            تفعيل المستوى الأول (1 TON)
         </button>
         
-        <p id="status-msg" class="text-[10px] text-gray-500 mt-4 uppercase tracking-widest">Connect wallet to proceed</p>
+        <p id="status-msg" class="text-[10px] text-gray-500 mt-4 uppercase">اتصل بالمحفظة للاستمرار</p>
     </div>
 
     <script>
+        // 1. إعدادات قاعدة البيانات (ضع إعداداتك هنا)
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -36,31 +37,23 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // 2. إعداد المحفظة
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-btn'
         });
 
-        // التقاط كود الإحالة وتخزينه
-        const urlParams = new URLSearchParams(window.location.search);
-        const refId = urlParams.get('ref');
-        if (refId) localStorage.setItem('my_upline_id', refId);
-
+        // 3. مراقبة حالة المحفظة
         tonConnectUI.onStatusChange(wallet => {
             const btn = document.getElementById('pay-btn');
             if (wallet) {
                 btn.classList.remove('hidden');
-                // فحص إذا كان المستخدم مسجلاً مسبقاً للانتقال للداشبورد مباشرة
-                database.ref('users/' + wallet.account.address).once('value').then(snap => {
-                    if (snap.exists() && snap.val().level >= 1) {
-                        window.location.href = "dashboard.html";
-                    }
-                });
             } else {
                 btn.classList.add('hidden');
             }
         });
 
+        // 4. دالة الدفع (هذا هو المكان الذي سألته عنه)
         async function payToJoin() {
             const wallet = tonConnectUI.wallet;
             if (!wallet) return;
@@ -69,7 +62,7 @@
                 const transaction = {
                     validUntil: Math.floor(Date.now() / 1000) + 360,
                     messages: [{
-                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx",
+                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // محفظتك
                         amount: "1000000000" // 1 TON
                     }]
                 };
@@ -78,24 +71,24 @@
                 
                 if (result) {
                     const address = wallet.account.address;
+                    // تحويل العنوان لـ ID
                     let numericString = "";
-                    for (let i = 0; i < address.length; i++) {
-                        numericString += address.charCodeAt(i).toString();
-                    }
+                    for (let i = 0; i < address.length; i++) { numericString += address.charCodeAt(i).toString(); }
                     let finalId = numericString.slice(-6);
 
+                    // حفظ البيانات
                     await database.ref('users/' + address).set({
                         wallet: address,
                         myId: finalId,
-                        upline: localStorage.getItem('my_upline_id') || "none",
+                        upline: new URLSearchParams(window.location.search).get('ref') || "none",
                         level: 1,
-                        earnings: 0.2 // الهدية التي تظهر في الموقع
+                        earnings: 0.2
                     });
                     
                     window.location.href = "dashboard.html";
                 }
             } catch (e) {
-                alert("Transaction failed. Please try again inside Tonkeeper.");
+                alert("فشل الدفع: يرجى المحاولة من داخل متصفح Tonkeeper");
             }
         }
     </script>
