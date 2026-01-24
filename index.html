@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE</title>
+    <title>FF FORTONE | Start</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
 </head>
-<body class="bg-[#010413] text-white flex flex-col items-center justify-center min-h-screen">
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
 
-    <div class="text-center p-10 bg-white/5 rounded-[3rem] border border-white/10 shadow-2xl">
-        <h1 class="text-4xl font-black mb-6 italic uppercase">FF <span class="text-blue-500">FORTONE</span></h1>
+    <div class="glass p-10 rounded-[3rem] max-w-md w-full text-center border-t-4 border-blue-600 shadow-2xl">
+        <h1 class="text-4xl font-black italic uppercase mb-8">FF <span class="text-blue-500">FORTONE</span></h1>
         
-        <div id="ton-connect-btn" class="mb-8 flex justify-center"></div>
+        <div id="ton-connect-btn" class="flex justify-center mb-8"></div>
 
-        <button id="pay-btn" onclick="payToJoin()" class="hidden w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl transition-all shadow-lg">
-            ACTIVATE LEVEL 1 (1 TON)
+        <button id="pay-btn" onclick="payToJoin()" class="hidden w-full bg-blue-600 text-white font-black py-4 rounded-2xl uppercase italic shadow-lg">
+            Activate Level 1 (1 TON)
         </button>
-        
-        <p id="status-msg" class="text-[10px] text-gray-500 mt-4 uppercase tracking-widest">Connect wallet to proceed</p>
+
+        <p id="status-msg" class="text-[10px] text-gray-500 mt-6 uppercase font-bold italic">Secure Payment System</p>
     </div>
 
     <script>
@@ -41,23 +45,37 @@
             buttonRootId: 'ton-connect-btn'
         });
 
+        // التقاط كود الإحالة من الرابط
+        const urlParams = new URLSearchParams(window.location.search);
+        const refId = urlParams.get('ref');
+        if (refId) localStorage.setItem('my_upline_id', refId);
+
         tonConnectUI.onStatusChange(wallet => {
-            const btn = document.getElementById('pay-btn');
-            if (wallet) { btn.classList.remove('hidden'); }
-            else { btn.classList.add('hidden'); }
+            if (wallet) {
+                document.getElementById('pay-btn').classList.remove('hidden');
+                checkStatus(wallet.account.address);
+            } else {
+                document.getElementById('pay-btn').classList.add('hidden');
+            }
         });
+
+        async function checkStatus(address) {
+            const snapshot = await database.ref('users/' + address).once('value');
+            if (snapshot.exists() && snapshot.val().level >= 1) {
+                window.location.href = "dashboard.html";
+            }
+        }
 
         async function payToJoin() {
             const wallet = tonConnectUI.wallet;
             if (!wallet) return;
 
             try {
-                // الكود البسيط الذي لا يسبب أخطاء
                 const transaction = {
                     validUntil: Math.floor(Date.now() / 1000) + 360,
                     messages: [{
                         address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx",
-                        amount: "1000000000" // 1 TON
+                        amount: "1000000000" // 1 TON بالكامل للأدمن
                     }]
                 };
 
@@ -71,9 +89,9 @@
                     await database.ref('users/' + address).set({
                         wallet: address,
                         myId: finalId,
-                        upline: new URLSearchParams(window.location.search).get('ref') || "none",
+                        upline: localStorage.getItem('my_upline_id') || "none",
                         level: 1,
-                        earnings: 0.2 // تظهر في الموقع كهدية
+                        earnings: 0.2 // الـ 0.2 تظهر هنا كرصيد في الموقع
                     });
                     window.location.href = "dashboard.html";
                 }
