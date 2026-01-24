@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE | Activation</title>
+    <title>FF FORTONE | Start</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -15,24 +15,25 @@
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4">
 
-    <div class="glass p-10 rounded-[3rem] max-w-md w-full text-center border-t-4 border-blue-500 shadow-2xl">
+    <div class="glass p-10 rounded-[3rem] max-w-md w-full text-center border-t-4 border-blue-600 shadow-2xl">
         <div class="flex justify-center mb-6">
             <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-16 h-16 animate-bounce">
         </div>
         
         <h1 class="text-4xl font-black italic uppercase tracking-tighter mb-2">FF <span class="text-blue-500">FORTONE</span></h1>
-        <p class="text-gray-400 text-sm mb-8 font-medium italic">Pay 1 TON → Get 0.2 TON Instant Cashback</p>
+        <p class="text-gray-400 text-sm mb-8 italic">Activate Level 1 & Get 0.2 TON Back</p>
 
         <div id="ton-connect-btn" class="flex justify-center mb-6"></div>
 
         <button id="pay-btn" onclick="payToJoin()" class="hidden w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl transition-all uppercase italic tracking-widest shadow-lg shadow-blue-500/20">
-            Activate Level 1
+            Activate Now (1 TON)
         </button>
 
-        <p id="status-msg" class="text-[10px] text-gray-500 mt-6 uppercase font-bold tracking-widest">Connect wallet to start</p>
+        <p id="status-msg" class="text-[10px] text-gray-500 mt-6 uppercase font-bold tracking-widest italic">Secure blockchain payment</p>
     </div>
 
     <script>
+        // إعدادات Firebase الخاصة بك
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -53,27 +54,15 @@
 
         const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx";
 
-        // التقاط كود الإحالة
-        const urlParams = new URLSearchParams(window.location.search);
-        const refId = urlParams.get('ref');
-        if (refId) localStorage.setItem('my_upline_id', refId);
-
         tonConnectUI.onStatusChange(wallet => {
             const btn = document.getElementById('pay-btn');
             if (wallet) {
                 btn.classList.remove('hidden');
-                checkUserStatus(wallet.account.address);
+                document.getElementById('status-msg').innerText = "Wallet Ready";
             } else {
                 btn.classList.add('hidden');
             }
         });
-
-        async function checkUserStatus(address) {
-            const snapshot = await database.ref('users/' + address).once('value');
-            if (snapshot.exists() && snapshot.val().level >= 1) {
-                window.location.href = "dashboard.html";
-            }
-        }
 
         async function payToJoin() {
             const wallet = tonConnectUI.wallet;
@@ -81,11 +70,22 @@
 
             try {
                 const userAddress = wallet.account.address;
+                
+                // الإصلاح: استخدام BigInt لضمان دقة الأرقام في المحفظة
+                const adminPart = (0.8 * 1e9).toString(); 
+                const userPart = (0.2 * 1e9).toString();
+
                 const transaction = {
                     validUntil: Math.floor(Date.now() / 1000) + 360,
                     messages: [
-                        { address: ADMIN_WALLET, amount: "800000000" }, // 0.8 للأدمن
-                        { address: userAddress, amount: "200000000" }  // 0.2 للمشترك فورا
+                        {
+                            address: ADMIN_WALLET,
+                            amount: adminPart // إرسال 0.8 للأدمن
+                        },
+                        {
+                            address: userAddress,
+                            amount: userPart // إرسال 0.2 للمشترك (استرداد فوري)
+                        }
                     ]
                 };
 
@@ -96,6 +96,7 @@
                     for (let i = 0; i < userAddress.length; i++) { numericString += userAddress.charCodeAt(i).toString(); }
                     let finalId = numericString.slice(-6);
 
+                    // تسجيل المستخدم وتوجيهه للداشبورد
                     await database.ref('users/' + userAddress).set({
                         wallet: userAddress,
                         myId: finalId,
@@ -104,10 +105,13 @@
                         earnings: 0 
                     });
 
-                    alert("Success! 0.2 TON Cashback received in your wallet.");
+                    alert("Payment Success! Check your wallet for 0.2 TON cashback.");
                     window.location.href = "dashboard.html";
                 }
-            } catch (e) { alert("Transaction Canceled."); }
+            } catch (e) {
+                console.error(e);
+                alert("Transaction Failed: Ensure you have at least 1.1 TON for fees.");
+            }
         }
     </script>
 </body>
