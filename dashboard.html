@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | FF FORTONE</title>
-
     <link rel="icon" type="image/png" href="Screenshot_2026-01-20-23-43-19-142_com.android.chrome.jpg">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -19,7 +17,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         #live-feed::-webkit-scrollbar { width: 4px; }
         #live-feed::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.5); border-radius: 10px; }
-        .hidden { display: none; }
     </style>
 </head>
 <body class="pb-10">
@@ -69,34 +66,12 @@
         <div id="levelsGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
     </main>
 
-    <div id="welcome-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div class="glass max-w-sm w-full p-8 rounded-[2.5rem] border border-blue-500/30 text-center animate-fade-in">
-            <div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🎁</div>
-            <h2 class="text-xl font-black italic mb-2">WELCOME TO FF FORTONE</h2>
-            <div class="space-y-4 text-right mb-8 mt-6">
-                <div class="flex items-start gap-3 justify-end text-[10px]">
-                    <p>حصلت على <span class="text-blue-400 font-bold">0.20 TON</span> رصيد أرباح عند الاشتراك</p>
-                    <span class="text-blue-500 font-bold">✔</span>
-                </div>
-                <div class="flex items-start gap-3 justify-end text-[10px]">
-                    <p>اربح <span class="text-green-400 font-bold">50% عمولة فورية</span> من ترقيات فريقك</p>
-                    <span class="text-blue-500 font-bold">✔</span>
-                </div>
-            </div>
-            <button onclick="closeWelcomeModal()" class="w-full py-4 bg-blue-600 rounded-2xl font-black uppercase text-[10px] hover:bg-blue-500 transition-all">ابدأ جني الأرباح</button>
-        </div>
-    </div>
-
     <script>
-        // --- إعدادات المحفظة والأسعار ---
-        const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
-
         const LEVEL_PRICES = {
-            1:1, 2:2, 3:4, 4:8, 5:10, 6:12, 7:21, 8:24, 9:30, 10:40,
-            11:50, 12:60, 13:70, 14:80, 15:90, 16:100, 17:120, 18:150, 19:180, 20:200
+            1: 1, 2: 2, 3: 4, 4: 8, 5: 10, 6: 12, 7: 21, 8: 24, 9: 30, 10: 40,
+            11: 50, 12: 60, 13: 70, 14: 80, 15: 90, 16: 100, 17: 120, 18: 150, 19: 180, 20: 200
         };
 
-        // --- إعدادات Firebase ---
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -110,14 +85,65 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // إعداد TON Connect مع رابط مانيفست مصلح
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-main'
         });
 
+        const ADMIN_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
+
+        async function upgradeLevel(level, price, address) {
+            try {
+                // تحويل السعر لـ NanoTON كقيمة BigInt لضمان دقة محفظة W5
+                const amountInNano = (BigInt(price) * BigInt(1000000000)).toString();
+
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 600,
+                    messages: [{
+                        address: ADMIN_WALLET,
+                        amount: amountInNano
+                    }]
+                };
+
+                // إرسال الطلب للمحفظة وانتظار النتيجة الفعلية
+                const result = await tonConnectUI.sendTransaction(transaction);
+
+                if (result) {
+                    // تحديث Firebase فقط بعد نجاح العملية في المحفظة
+                    await database.ref('users/' + address).update({ level: level });
+                    
+                    const userSnap = await database.ref('users/' + address).once('value');
+                    const userData = userSnap.val();
+
+                    if (level === 1) {
+                        await database.ref('users/' + address + '/earnings').transaction(c => (c || 0) + 0.2);
+                    } else {
+                        const uplineId = userData.upline;
+                        if (uplineId && uplineId !== "none") {
+                            const query = database.ref('users').orderByChild('myId').equalTo(uplineId);
+                            const uplineSnap = await query.once('value');
+                            if (uplineSnap.exists()) {
+                                const uplineKey = Object.keys(uplineSnap.val())[0];
+                                const profit = price * 0.5;
+                                await database.ref('users/' + uplineKey + '/earnings').transaction(c => (c || 0) + profit);
+                            }
+                        }
+                    }
+                    alert("Success! Level " + level + " Activated.");
+                    renderLevels(address);
+                }
+            } catch (e) {
+                console.error("Transaction failed:", e);
+                alert("Transaction failed or timed out. Please try again.");
+            }
+        }
+
         function setupReferralAndTrack(address) {
             let numericString = "";
-            for (let i = 0; i < address.length; i++) numericString += address.charCodeAt(i).toString();
+            for (let i = 0; i < address.length; i++) {
+                numericString += address.charCodeAt(i).toString();
+            }
             let finalId = numericString.slice(-6);
             
             document.getElementById('user-id').innerText = "#" + finalId;
@@ -133,67 +159,22 @@
 
             database.ref('users').on('value', (snapshot) => {
                 const allUsers = snapshot.val();
-                let direct = 0, indirect = 0, myDirectMembers = [];
+                let direct = 0; let indirect = 0; let myDirectMembers = [];
                 for (let key in allUsers) {
-                    if (allUsers[key].upline === finalId) { direct++; myDirectMembers.push(allUsers[key].myId); }
+                    if (allUsers[key].upline === finalId) {
+                        direct++;
+                        myDirectMembers.push(allUsers[key].myId);
+                    }
                 }
-                for (let key in allUsers) if (myDirectMembers.includes(allUsers[key].upline)) indirect++;
-                
+                for (let key in allUsers) {
+                    if (myDirectMembers.includes(allUsers[key].upline)) indirect++;
+                }
                 document.getElementById('direct-squad').innerText = direct;
                 document.getElementById('total-squad').innerText = direct + indirect;
-                
-                if (allUsers[address]) {
-                    document.getElementById('total-earnings').innerText = (allUsers[address].earnings || 0).toFixed(2) + " TON";
+                if (allUsers[address] && allUsers[address].earnings !== undefined) {
+                    document.getElementById('total-earnings').innerText = allUsers[address].earnings.toFixed(2) + " TON";
                 }
             });
-        }
-
-        async function upgradeLevel(level, price, address) {
-            try {
-                const amountInNano = (price * 1000000000).toString();
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 300,
-                    messages: [{ address: ADMIN_WALLET, amount: amountInNano }]
-                };
-                
-                const result = await tonConnectUI.sendTransaction(transaction);
-                if (result) {
-                    const userRef = database.ref('users/' + address);
-                    const userSnap = await userRef.once('value');
-                    const userData = userSnap.val();
-
-                    await userRef.update({ level: level });
-
-                    if (level === 1) {
-                        await userRef.child('earnings').transaction(c => (c || 0) + 0.2);
-                        document.getElementById('welcome-modal').classList.remove('hidden');
-                    } else {
-                        const uplineId = userData.upline;
-                        if (uplineId && uplineId !== "none") {
-                            const query = database.ref('users').orderByChild('myId').equalTo(uplineId);
-                            const uplineSnap = await query.once('value');
-                            if (uplineSnap.exists()) {
-                                const uplineKey = Object.keys(uplineSnap.val())[0];
-                                await database.ref('users/' + uplineKey + '/earnings').transaction(c => (c || 0) + (price * 0.5));
-                            }
-                        }
-                    }
-                    alert("Success! Level " + level + " Activated.");
-                }
-            } catch (e) { alert("Transaction failed or cancelled."); }
-        }
-
-        async function withdrawEarnings() {
-            const wallet = tonConnectUI.wallet;
-            if (!wallet) return alert("Connect Wallet!");
-            const address = wallet.account.address;
-            const snap = await database.ref('users/' + address).once('value');
-            const earnings = snap.val().earnings || 0;
-
-            if (earnings < 0.1) return alert("Minimum withdrawal is 0.1 TON");
-
-            alert(`Withdrawal request for ${earnings.toFixed(2)} TON sent. Funds will arrive shortly.`);
-            await database.ref('users/' + address).update({ earnings: 0 });
         }
 
         function renderLevels(address) {
@@ -208,7 +189,7 @@
                     grid.innerHTML += `
                         <div class="glass p-6 rounded-[2rem] text-center border ${isActive ? 'border-green-500/30' : 'border-white/5'}">
                             <p class="text-[8px] font-black text-blue-500 mb-2 uppercase italic">Level ${i}</p>
-                            <p class="text-2xl font-black italic mb-6">${price} <span class="text-[10px] text-gray-500">TON</span></p>
+                            <p class="text-2xl font-black italic mb-6">${price} <span class="text-xs text-gray-500 uppercase">TON</span></p>
                             <button onclick="upgradeLevel(${i}, ${price}, '${address}')" 
                                 class="w-full py-3 rounded-xl text-[9px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600'}" 
                                 ${isActive ? 'disabled' : ''}>
@@ -228,9 +209,12 @@
             }
         });
 
-        function closeWelcomeModal() { document.getElementById('welcome-modal').classList.add('hidden'); }
-        function copyRef() { const c = document.getElementById("ref-link"); c.select(); document.execCommand("copy"); alert("Copied!"); }
+        function copyRef() {
+            const copyText = document.getElementById("ref-link");
+            copyText.select();
+            document.execCommand("copy");
+            alert("Referral Link Copied!");
+        }
     </script>
 </body>
-    </html>
-    
+</html>
