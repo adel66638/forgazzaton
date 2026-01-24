@@ -3,106 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE FREE | Professional TON Platform</title>
+    <title>FF FORTONE | Entry</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #010413; }
+        body { background-color: #010413; font-family: 'Inter', sans-serif; color: white; }
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .hero-gradient { background: radial-gradient(circle at center, #1e40af 0%, #010413 75%); }
-        .ton-3d { width: 80px; height: 80px; filter: drop-shadow(0 0 15px rgba(0, 152, 234, 0.6)); display: inline-block; vertical-align: middle; margin: 0 15px; }
     </style>
 </head>
-<body class="text-white overflow-x-hidden">
+<body class="flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
 
-    <div class="fixed inset-0 hero-gradient -z-10 opacity-60"></div>
-
-    <nav class="flex justify-between items-center p-6 max-w-7xl mx-auto">
-        <div class="text-2xl font-black text-white italic flex items-center tracking-tighter uppercase">
-            <span class="text-blue-500">FF</span> 
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-8 h-8 mx-2" alt="TON"> 
-            FORTONE
-        </div>
-        <div id="ton-connect-btn"></div>
-    </nav>
-
-    <main class="flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
-        <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tighter uppercase italic">
-            FF <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="ton-3d animate-pulse"> FORTONE
+    <div class="mb-10 text-center">
+        <h1 class="text-6xl font-black italic tracking-tighter uppercase">
+            FF <span class="text-blue-500">FORTONE</span>
         </h1>
+        <p class="text-gray-500 text-[10px] tracking-[0.3em] uppercase mt-2">Professional TON Platform</p>
+    </div>
 
-        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl border-blue-500/20">
-            <div class="flex justify-between items-center mb-10">
-                <div class="text-left">
-                    <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">Entry Ticket</p>
-                    <p class="text-4xl font-black italic">1.00 <span class="text-blue-500 text-xl">TON</span></p>
-                </div>
-                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-14 h-14">
+    <div class="glass p-10 rounded-[3rem] w-full max-w-md shadow-2xl text-center relative overflow-hidden border-t-4 border-blue-600">
+        <div class="flex justify-between items-center mb-10">
+            <div class="text-left">
+                <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Access Fee</p>
+                <p class="text-4xl font-black italic">1.00 <span class="text-blue-500 text-xl">TON</span></p>
             </div>
-
-            <button id="mainActionButton" onclick="handleMainAction()" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-sm uppercase italic tracking-widest transition-all shadow-[0_15px_30px_rgba(37,99,235,0.3)]">
-                <span id="buttonText">Connect Wallet</span>
-            </button>
+            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-12 h-12 animate-pulse">
         </div>
-    </main>
+
+        <div id="ton-connect-btn" class="mb-6 flex justify-center"></div>
+
+        <button id="mainActionButton" onclick="handleMainAction()" class="hidden w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-sm uppercase italic tracking-widest transition-all shadow-lg shadow-blue-900/20">
+            <span id="buttonText">Pay 1 TON to Join</span>
+        </button>
+        
+        <p id="loading-msg" class="hidden text-blue-400 text-[10px] font-bold uppercase animate-bounce mt-4">Checking your status...</p>
+    </div>
 
     <script>
-        // إعداد الاتصال مع دعم كامل للهواتف
+        // 1. إعداد Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
+            authDomain: "ff-fortone.firebaseapp.com",
+            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
+            projectId: "ff-fortone",
+            storageBucket: "ff-fortone.appspot.com",
+            messagingSenderId: "890615410300",
+            appId: "1:890615410300:web:5659f9..."
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // 2. إعداد TON Connect
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn',
-            uiOptions: {
-                twaReturnUrl: 'https://t.me/your_bot' // اختياري: إذا كان لديك بوت تلجرام
-            }
+            buttonRootId: 'ton-connect-btn'
         });
 
-        // مراقبة الحالة وتغيير نص الزر
-        tonConnectUI.onStatusChange(wallet => {
-            const btnText = document.getElementById('buttonText');
+        // 3. مستشعر الحالة (الحل الجذري)
+        tonConnectUI.onStatusChange(async (wallet) => {
+            const actionBtn = document.getElementById('mainActionButton');
+            const loadingMsg = document.getElementById('loading-msg');
+
             if (wallet) {
+                loadingMsg.classList.remove('hidden'); // إظهار رسالة جاري الفحص
                 const address = wallet.account.address;
-                const hasPaid = localStorage.getItem('user_paid_' + address);
-                btnText.innerText = hasPaid ? "Open Dashboard" : "Pay 1 TON to Join";
+
+                try {
+                    // فحص قاعدة البيانات للتأكد من الاشتراك
+                    const snap = await database.ref('users/' + address).once('value');
+                    if (snap.exists() && snap.val().level >= 1) {
+                        // إذا كان مشتركاً، ينقله فوراً للداشبورد
+                        window.location.href = 'dashboard.html';
+                        return;
+                    }
+                    // إذا لم يكن مشتركاً، يظهر زر الدفع
+                    actionBtn.classList.remove('hidden');
+                    loadingMsg.classList.add('hidden');
+                } catch (e) {
+                    console.error("Database Error:", e);
+                    actionBtn.classList.remove('hidden');
+                }
             } else {
-                btnText.innerText = "Connect Wallet";
+                actionBtn.classList.add('hidden');
+                loadingMsg.classList.add('hidden');
             }
         });
 
         async function handleMainAction() {
-            // 1. إذا لم تكن متصلة، افتح نافذة الربط
-            if (!tonConnectUI.connected) {
-                await tonConnectUI.openModal();
-                return;
-            }
+            const wallet = tonConnectUI.wallet;
+            if (!wallet) return;
 
-            const address = tonConnectUI.wallet.account.address;
-
-            // 2. إذا دفع مسبقاً، افتح الداشبورد
-            if (localStorage.getItem('user_paid_' + address)) {
-                window.location.href = 'dashboard.html';
-                return;
-            }
-
-            // 3. عملية الدفع (محسنة للهاتف)
+            const address = wallet.account.address;
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 360,
                 messages: [{
-                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // محفظة المشروع
-                    amount: "1000000000" // 1 TON
+                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx",
+                    amount: "1000000000"
                 }]
             };
 
             try {
-                // فتح المحفظة مباشرة للدفع
                 const result = await tonConnectUI.sendTransaction(transaction);
-                
                 if (result) {
-                    localStorage.setItem('user_paid_' + address, 'true');
+                    // تسجيل البيانات بعد نجاح الدفع
+                    let numericString = "";
+                    for (let i = 0; i < address.length; i++) { numericString += address.charCodeAt(i).toString(); }
+                    let finalId = numericString.slice(-6);
+
+                    await database.ref('users/' + address).set({
+                        wallet: address,
+                        myId: finalId,
+                        upline: new URLSearchParams(window.location.search).get('ref') || "none",
+                        level: 1,
+                        earnings: 0.2
+                    });
                     window.location.href = 'dashboard.html';
                 }
             } catch (e) {
-                alert("Payment Pending: Please confirm in your wallet and return here.");
+                alert("Transaction Failed or Canceled");
             }
         }
     </script>
