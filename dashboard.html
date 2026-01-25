@@ -8,57 +8,119 @@
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .level-active { border: 2px solid #22c55e !important; box-shadow: 0 0 15px rgba(34, 197, 94, 0.1); }
-        .level-locked { border: 2px solid #0ea5e9 !important; }
-        .copy-anim:active { transform: scale(0.95); transition: 0.1s; }
+        body { background-color: #0d1117; color: white; font-family: 'Inter', sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 1.5rem; }
+        .blue-gradient-card { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 1.5rem; }
+        .profile-hex { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #3b82f6; padding: 2px; }
+        .bottom-nav { background: rgba(13, 17, 23, 0.95); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="pb-24">
 
-    <nav class="flex justify-between items-center mb-10 max-w-7xl mx-auto">
-        <h1 class="text-3xl font-black italic uppercase tracking-tighter">FF <span class="text-sky-400">FORTONE</span></h1>
-        <div id="ton-connect-btn"></div>
-    </nav>
+    <header class="p-4 flex justify-between items-center max-w-lg mx-auto">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <span class="text-[10px] font-bold">🔥</span>
+            </div>
+            <span class="text-sm font-semibold text-blue-400">Users Activity</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-400">ID 59127</span>
+            <span class="text-xs text-green-400 font-bold">get 0.5 TON</span>
+        </div>
+    </header>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
-        <div class="glass p-8 rounded-[2.5rem] border-t-2 border-sky-400 text-center">
-            <p class="text-gray-500 text-[10px] uppercase font-black mb-1">Your ID</p>
-            <p id="user-id" class="text-3xl font-black italic mb-4 text-sky-400">#------</p>
-            <div class="pt-3 border-t border-white/5">
-                <p id="upline-id" class="text-sm font-bold text-sky-300 uppercase italic">Upline: #------</p>
+    <div class="max-w-lg mx-auto px-4">
+        
+        <div class="glass-card p-6 mb-4 relative overflow-hidden">
+            <div class="absolute top-4 right-4 flex gap-3 text-gray-400">
+                <button>🔍</button> <button>⚙️</button> <button>🔔</button> <button>📤</button>
+            </div>
+            <div class="flex items-center gap-4 mb-6">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=V10" class="profile-hex" alt="avatar">
+                <div>
+                    <h2 class="text-xl font-bold">V10</h2>
+                    <p class="text-xs text-gray-500">ID <span id="display-id">----</span> | Upline ID <span id="display-upline">----</span></p>
+                </div>
+                <span class="ml-auto bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-1 rounded-lg font-bold">Inactive</span>
+            </div>
+            <button onclick="copyReferral()" class="w-full bg-blue-900/30 border border-blue-500/30 py-3 rounded-xl text-blue-400 font-bold flex items-center justify-center gap-2 hover:bg-blue-900/50 transition">
+                🔗 <span id="ref-link-text">Referral link</span>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="glass-card p-5 relative">
+                <p class="text-gray-500 text-xs font-semibold mb-4">Profit</p>
+                <div class="flex items-center gap-2 mb-1">
+                    <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg" class="w-6 h-6">
+                    <span class="text-2xl font-black italic">11.132</span>
+                </div>
+                <p class="text-gray-500 text-xs">~$17</p>
+                <button class="absolute top-4 right-4 bg-white/10 text-[9px] px-2 py-1 rounded-full text-gray-400">Claim 0 TON</button>
+            </div>
+
+            <div class="blue-gradient-card p-5 relative">
+                <div class="flex justify-between items-start mb-6">
+                    <p class="text-white/80 text-xs font-semibold">Partners</p>
+                    <span>👥</span>
+                </div>
+                <p id="partners-count" class="text-3xl font-black">2</p>
+            </div>
+
+            <div class="glass-card p-5">
+                <div class="flex justify-between items-start mb-6">
+                    <p class="text-gray-500 text-xs font-semibold">Total team</p>
+                    <span>👥</span>
+                </div>
+                <p id="team-count" class="text-3xl font-black">5</p>
+            </div>
+
+            <div class="glass-card p-5 border-dashed border-gray-700">
+                <p class="text-gray-500 text-xs font-semibold mb-4">Passive income</p>
+                <div class="flex items-center gap-2 mb-1">
+                    <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg" class="w-5 h-5">
+                    <span class="text-xl font-black italic text-blue-400">4.632</span>
+                </div>
+                <p class="text-gray-500 text-[10px]">~$7</p>
             </div>
         </div>
-        
-        <div onclick="copyReferral()" class="glass p-8 rounded-[2.5rem] border-t-2 border-sky-400 cursor-pointer copy-anim hover:bg-white/5 flex flex-col justify-center text-center">
-            <p class="text-gray-500 text-[10px] uppercase font-black mb-1 text-sky-400">Referral Link</p>
-            <p id="ref-link-text" class="text-xs font-bold text-gray-400 truncate mt-2 mb-2">Connect wallet...</p>
-            <p class="text-[9px] text-sky-500 font-bold uppercase tracking-widest">Click to copy</p>
+
+        <div class="flex justify-between items-center mb-6 px-2">
+            <h3 class="text-lg font-bold">Marketing Levels</h3>
+            <span class="text-blue-500 text-sm italic">Upgrade Marathon ></span>
         </div>
+
+        <div id="levels-grid" class="grid grid-cols-2 gap-4">
+            </div>
     </div>
 
-    <div class="max-w-7xl mx-auto">
-        <h2 class="text-sm font-black uppercase tracking-[0.3em] mb-8 text-center text-gray-500 italic">Marketing <span class="text-sky-400">Levels</span></h2>
-        <div id="levels-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
-    </div>
+    <nav class="fixed bottom-0 left-0 right-0 bottom-nav flex justify-around p-4 z-50">
+        <div class="flex flex-col items-center gap-1 text-blue-500 border-t-2 border-blue-500 pt-1">
+            <span class="text-lg">🔳</span><span class="text-[9px] font-bold uppercase">Main</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-gray-500">
+            <span class="text-lg">🚀</span><span class="text-[9px] font-bold uppercase">Overview</span>
+        </div>
+        <div class="flex flex-col items-center justify-center bg-blue-500 w-12 h-12 rounded-full -mt-8 border-4 border-[#0d1117] shadow-lg shadow-blue-500/20">
+            <span class="text-white text-xl">💠</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-gray-500">
+            <span class="text-lg">👥</span><span class="text-[9px] font-bold uppercase">Team</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-gray-500">
+            <span class="text-lg">💼</span><span class="text-[9px] font-bold uppercase">Wallet</span>
+        </div>
+    </nav>
 
     <script>
-        // --- ضع هنا بيانات Firebase الخاصة بك ---
-        const firebaseConfig = {
-            apiKey: "AIzaSy...", 
-            authDomain: "ff-fortone.firebaseapp.com",
-            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
-            projectId: "ff-fortone",
-            storageBucket: "ff-fortone.appspot.com",
-            messagingSenderId: "890615410300",
-            appId: "1:890615410300:web:..."
-        };
+        // --- 1. CONFIG & FIREBASE (أدخل بياناتك هنا) ---
+        const firebaseConfig = { /* بياناتك هنا */ };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
+        const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20];
 
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
@@ -72,36 +134,30 @@
 
         async function loadUserData(address) {
             database.ref('users/' + address).on('value', (snap) => {
-                const userData = snap.val();
-                if (!userData) return;
-                document.getElementById('user-id').innerText = "#" + (userData.myId || "---");
-                document.getElementById('upline-id').innerText = "Upline: #" + (userData.upline || "1");
-                document.getElementById('ref-link-text').innerText = window.location.origin + "/index.html?ref=" + userData.myId;
-                renderLevels(userData.level || 0, address);
+                const data = snap.val() || {};
+                document.getElementById('display-id').innerText = data.myId || "----";
+                document.getElementById('display-upline').innerText = data.upline || "----";
+                document.getElementById('partners-count').innerText = data.referrals || 0;
+                document.getElementById('team-count').innerText = data.teamSize || 0;
+                renderLevels(data.level || 0, address);
             });
-        }
-
-        function copyReferral() {
-            const link = document.getElementById('ref-link-text').innerText;
-            if (link.includes("Connect")) return;
-            navigator.clipboard.writeText(link).then(() => alert("Copied!"));
         }
 
         function renderLevels(currentLvl, address) {
             const grid = document.getElementById('levels-grid');
             grid.innerHTML = "";
-            for (let i = 1; i <= 20; i++) {
+            for (let i = 1; i <= 10; i++) {
                 let price = LEVEL_PRICES[i];
                 let isActive = i <= currentLvl;
                 grid.innerHTML += `
-                    <div class="glass p-6 rounded-[2rem] text-center transition-all ${isActive ? 'level-active' : 'level-locked'}">
-                        <div class="flex justify-between mb-4">
-                            <span class="text-[8px] font-black ${isActive ? 'text-green-500' : 'text-sky-400'} uppercase">LVL ${i}</span>
-                            ${isActive ? '<span class="text-[7px] text-green-500 font-bold uppercase">Active</span>' : ''}
+                    <div class="glass-card p-5 border-t-2 ${isActive ? 'border-green-500' : 'border-blue-500'}">
+                        <div class="flex justify-between text-[9px] font-black uppercase mb-4">
+                            <span class="${isActive ? 'text-green-500' : 'text-blue-500'}">Level ${i}</span>
+                            <span>${isActive ? '✅' : '🔒'}</span>
                         </div>
-                        <p class="text-2xl font-black italic mb-6">${price} TON</p>
+                        <p class="text-xl font-black italic mb-4">${price} TON</p>
                         <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}')`}" 
-                            class="w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-widest ${isActive ? 'bg-green-600/20 text-green-500' : 'bg-sky-500 text-white shadow-lg shadow-sky-900/40'}">
+                            class="w-full py-2 rounded-lg text-[10px] font-black ${isActive ? 'bg-green-500/10 text-green-500' : 'bg-blue-600 text-white'}">
                             ${isActive ? 'ACTIVATED' : 'UPGRADE'}
                         </button>
                     </div>`;
@@ -109,15 +165,11 @@
         }
 
         async function upgradeLevel(level, price, address) {
-            try {
-                const amountInNano = (BigInt(price) * BigInt(1e9)).toString();
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 120,
-                    messages: [{ address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", amount: amountInNano }]
-                };
-                const result = await tonConnectUI.sendTransaction(transaction);
-                if (result) await database.ref('users/' + address).update({ level: level });
-            } catch (e) { console.error(e); }
+            // كود الدفع 50/50 الذي برمجناه سابقاً يوضع هنا
+        }
+
+        function copyReferral() {
+            // كود النسخ يوضع هنا
         }
     </script>
 </body>
