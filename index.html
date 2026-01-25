@@ -3,162 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE | Dashboard</title>
+    <title>FF FORTONE FREE | Professional TON Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #010413; }
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .active-level { border-color: rgba(59, 130, 246, 0.4); box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
-        .copy-anim:active { transform: scale(0.95); transition: 0.1s; }
+        .hero-gradient { background: radial-gradient(circle at center, #1e40af 0%, #010413 75%); }
+        .ton-3d { width: 80px; height: 80px; filter: drop-shadow(0 0 15px rgba(0, 152, 234, 0.6)); display: inline-block; vertical-align: middle; margin: 0 15px; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="text-white overflow-x-hidden">
 
-    <nav class="flex justify-between items-center mb-10 max-w-7xl mx-auto">
-        <h1 class="text-3xl font-black italic uppercase tracking-tighter">FF <span class="text-blue-500">FORTONE</span></h1>
+    <div class="fixed inset-0 hero-gradient -z-10 opacity-60"></div>
+
+    <nav class="flex justify-between items-center p-6 max-w-7xl mx-auto">
+        <div class="text-2xl font-black text-white italic flex items-center tracking-tighter uppercase">
+            <span class="text-blue-500">FF</span> 
+            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-8 h-8 mx-2" alt="TON"> 
+            FORTONE
+        </div>
         <div id="ton-connect-btn"></div>
     </nav>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto mb-12">
-        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
-            <p id="user-id" class="text-2xl font-black italic mb-3">#------</p>
-            <div class="pt-2 border-t border-white/5">
-                <p class="text-gray-600 text-[9px] uppercase font-bold">Upline ID</p>
-                <p id="upline-id" class="text-sm font-bold text-blue-400">#------</p>
+    <main class="flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
+        <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tighter uppercase italic">
+            FF <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="ton-3d animate-pulse"> FORTONE
+        </h1>
+
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl border-blue-500/20">
+            <div class="flex justify-between items-center mb-10">
+                <div class="text-left">
+                    <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">Entry Ticket</p>
+                    <p class="text-4xl font-black italic">1.00 <span class="text-blue-500 text-xl">TON</span></p>
+                </div>
+                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-14 h-14">
             </div>
-        </div>
-        
-        <div onclick="copyReferral()" class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600 cursor-pointer copy-anim hover:bg-white/5 transition-all">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1 text-blue-500">Your Referral Link</p>
-            <p id="ref-link-text" class="text-xs font-bold text-gray-300 truncate mt-2 mb-1">Connect wallet to see link</p>
-            <p class="text-[8px] text-blue-600 font-bold uppercase tracking-widest">Click to copy</p>
-        </div>
 
-        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1 text-blue-500">Referrals</p>
-            <p id="referrals-count" class="text-2xl font-black italic">0 <span class="text-xs text-gray-500 uppercase not-italic">Direct</span></p>
-            <p class="text-[8px] text-blue-600 font-bold uppercase mt-2 italic">Network Growth</p>
+            <button id="mainActionButton" onclick="handleMainAction()" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-sm uppercase italic tracking-widest transition-all shadow-[0_15px_30px_rgba(37,99,235,0.3)]">
+                <span id="buttonText">Connect Wallet</span>
+            </button>
         </div>
-
-        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1 text-blue-500">My Team</p>
-            <p id="team-count" class="text-2xl font-black italic">0 <span class="text-xs text-gray-500 uppercase not-italic">Total</span></p>
-            <p class="text-[8px] text-blue-600 font-bold uppercase mt-2 italic">Active Members</p>
-        </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto">
-        <h2 class="text-sm font-black uppercase tracking-[0.3em] mb-8 text-center text-gray-500">Marketing Levels</h2>
-        <div id="levels-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
-    </div>
+    </main>
 
     <script>
-        // --- 1. CONFIGURATION ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
-            authDomain: "ff-fortone.firebaseapp.com",
-            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
-            projectId: "ff-fortone",
-            storageBucket: "ff-fortone.appspot.com",
-            messagingSenderId: "890615410300",
-            appId: "1:890615410300:web:5659f9..."
-        };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
-
+        // إعداد الاتصال مع دعم كامل للهواتف
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn'
+            buttonRootId: 'ton-connect-btn',
+            uiOptions: {
+                twaReturnUrl: 'https://t.me/your_bot' // اختياري
+            }
         });
 
+        // مراقبة الحالة وتغيير نص الزر
         tonConnectUI.onStatusChange(wallet => {
+            const btnText = document.getElementById('buttonText');
             if (wallet) {
-                loadUserData(wallet.account.address);
+                const address = wallet.account.address;
+                const hasPaid = localStorage.getItem('user_paid_' + address);
+                btnText.innerText = hasPaid ? "Open Dashboard" : "Pay 1 TON to Join";
             } else {
-                window.location.href = 'index.html';
+                btnText.innerText = "Connect Wallet";
             }
         });
 
-        async function loadUserData(address) {
-            database.ref('users/' + address).on('value', (snap) => {
-                const userData = snap.val();
-                if (!userData) return;
-
-                const myId = userData.myId || "------";
-                document.getElementById('user-id').innerText = "#" + myId;
-                document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
-                
-                const fullRefLink = window.location.origin + "/index.html?ref=" + myId;
-                document.getElementById('ref-link-text').innerText = fullRefLink;
-
-                document.getElementById('referrals-count').innerHTML = `${userData.referrals || 0} <span class="text-xs text-gray-500 uppercase not-italic">Direct</span>`;
-                document.getElementById('team-count').innerHTML = `${userData.teamSize || 0} <span class="text-xs text-gray-500 uppercase not-italic">Total</span>`;
-
-                renderLevels(userData.level || 0, address);
-            });
-        }
-
-        function copyReferral() {
-            const link = document.getElementById('ref-link-text').innerText;
-            if (link.includes("Connect")) return;
-            navigator.clipboard.writeText(link).then(() => {
-                alert("Referral link copied to clipboard!");
-            });
-        }
-
-        function renderLevels(currentLvl, address) {
-            const grid = document.getElementById('levels-grid');
-            grid.innerHTML = "";
-
-            for (let i = 1; i <= 20; i++) {
-                let price = LEVEL_PRICES[i];
-                let isActive = i <= currentLvl;
-
-                grid.innerHTML += `
-                    <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'active-level' : 'border-white/5'}">
-                        <div class="flex justify-between items-start mb-4">
-                            <p class="text-[8px] font-black text-blue-500 uppercase italic">Level ${i}</p>
-                            ${isActive ? '<span class="text-[7px] text-blue-500 font-bold bg-blue-500/10 px-2 py-0.5 rounded-full uppercase">Active</span>' : ''}
-                        </div>
-                        <p class="text-2xl font-black italic mb-6">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
-                        <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}')`}" 
-                            class="w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all 
-                            ${isActive ? 
-                                'bg-blue-600/10 text-blue-500 cursor-default border border-blue-500/20' : 
-                                'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/30'}"
-                            ${isActive ? 'disabled' : ''}>
-                            ${isActive ? 'ACTIVATED' : 'UPGRADE'}
-                        </button>
-                    </div>`;
+        async function handleMainAction() {
+            if (!tonConnectUI.connected) {
+                await tonConnectUI.openModal();
+                return;
             }
-        }
 
-        async function upgradeLevel(level, price, address) {
+            const address = tonConnectUI.wallet.account.address;
+
+            if (localStorage.getItem('user_paid_' + address)) {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 360,
+                messages: [{
+                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
+                    amount: "1000000000" // 1 TON
+                }]
+            };
+
             try {
-                const amountInNano = (BigInt(price) * BigInt(1e9)).toString();
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 120,
-                    messages: [{
-                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
-                        amount: amountInNano
-                    }]
-                };
-
                 const result = await tonConnectUI.sendTransaction(transaction);
                 if (result) {
-                    await database.ref('users/' + address).update({ level: level });
-                    alert("Success! Level " + level + " is now active.");
+                    localStorage.setItem('user_paid_' + address, 'true');
+                    window.location.href = 'dashboard.html';
                 }
             } catch (e) {
-                console.error(e);
-                alert("Transaction canceled or failed.");
+                alert("Payment Pending: Please confirm in your wallet and return here.");
             }
         }
     </script>
