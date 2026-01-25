@@ -1,37 +1,40 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE | Entry</title>
+    <title>FF FORTONE | Registration</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    </style>
 </head>
-<body class="bg-[#010413] text-white flex flex-col items-center justify-center min-h-screen p-6">
+<body class="flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-md bg-white/5 p-8 rounded-[2.5rem] border border-white/10 text-center shadow-2xl">
-        <h1 class="text-4xl font-black italic mb-6 uppercase">FF <span class="text-blue-500">FORTONE</span></h1>
-        
-        <div id="ton-connect-btn" class="flex justify-center mb-8"></div>
+    <div class="glass p-8 rounded-[2.5rem] max-w-md w-full text-center border-t-4 border-blue-600">
+        <h1 class="text-4xl font-black italic mb-2">FF <span class="text-blue-500">FORTONE</span></h1>
+        <p class="text-gray-400 text-sm mb-8 uppercase tracking-widest">Next-Gen Decentralized Matrix</p>
 
-        <div id="payment-area" class="hidden">
-            <div class="bg-blue-600/10 p-4 rounded-2xl mb-6 border border-blue-500/20">
-                <p class="text-xs text-blue-400 uppercase font-bold tracking-widest mb-1">المبلغ المطلوب</p>
-                <p class="text-3xl font-black italic">1.00 TON</p>
-            </div>
-
-            <button id="pay-button" onclick="executePayment()" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black uppercase italic tracking-widest shadow-lg shadow-blue-900/40 transition-all active:scale-95">
-                تأكيد الدفع الآن
-            </button>
+        <div class="bg-blue-600/10 border border-blue-500/20 rounded-2xl py-3 px-4 mb-6">
+            <p class="text-[10px] text-blue-400 uppercase font-bold">You are invited by</p>
+            <p id="inviter-id" class="text-lg font-black italic">ID #------</p>
         </div>
 
-        <p id="loading-status" class="hidden text-sm text-blue-400 animate-pulse mt-4 font-bold">جاري التحقق من حالة الحساب...</p>
+        <div id="ton-connect-btn" class="flex justify-center mb-6"></div>
+
+        <button id="reg-btn" onclick="handleRegistration()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-blue-900/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            Register & Activate (1 TON)
+        </button>
+
+        <p class="mt-6 text-[10px] text-gray-500 uppercase tracking-tighter">By registering, you agree to the smart contract terms.</p>
     </div>
 
     <script>
-        // إعدادات Firebase
+        // --- 1. CONFIGURATION (استخدم نفس بياناتك) ---
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -44,78 +47,102 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // إعداد TON Connect
+        // --- 2. CAPTURE REFERRAL FROM URL ---
+        const urlParams = new URLSearchParams(window.location.search);
+        let uplineIdFromURL = urlParams.get('ref') || "1"; // الافتراضي ID رقم 1 إذا لم يوجد رابط
+        document.getElementById('inviter-id').innerText = "ID #" + uplineIdFromURL;
+
+        // --- 3. TON CONNECT ---
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-btn'
         });
 
-        // مراقبة حالة الاتصال والتحقق من الاشتراك
-        tonConnectUI.onStatusChange(async (wallet) => {
-            const paymentArea = document.getElementById('payment-area');
-            const loadingStatus = document.getElementById('loading-status');
+        // --- 4. REGISTRATION LOGIC (The Engine) ---
+        async function handleRegistration() {
+            const wallet = tonConnectUI.account;
+            if (!wallet) return alert("Please connect your wallet first!");
 
-            if (wallet) {
-                loadingStatus.classList.remove('hidden');
-                paymentArea.classList.add('hidden');
-                
-                const addr = wallet.account.address;
-                const snap = await database.ref('users/' + addr).once('value');
-                
-                if (snap.exists() && snap.val().level >= 1) {
-                    window.location.href = "dashboard.html";
-                } else {
-                    loadingStatus.classList.add('hidden');
-                    paymentArea.classList.remove('hidden');
-                }
-            } else {
-                paymentArea.classList.add('hidden');
-                loadingStatus.classList.add('hidden');
-            }
-        });
-
-        async function executePayment() {
-            const wallet = tonConnectUI.wallet;
-            if (!wallet) return;
-
-            const userAddr = wallet.account.address;
-            const btn = document.getElementById('pay-button');
-            
-            btn.innerText = "جاري فتح المحفظة...";
-            btn.disabled = true;
-
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 300,
-                messages: [{
-                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // محفظة الأدمن
-                    amount: "1000000000" // 1 TON بالتمام
-                }]
-            };
+            const userAddress = wallet.address;
 
             try {
-                const result = await tonConnectUI.sendTransaction(transaction);
-                
-                if (result) {
-                    // تحويل العنوان لـ ID
-                    let numericStr = "";
-                    for (let i = 0; i < userAddr.length; i++) { numericStr += userAddr.charCodeAt(i).toString(); }
-                    let myId = numericStr.slice(-6);
+                // ا. التحقق إذا كان المستخدم مسجلاً مسبقاً
+                const userSnap = await database.ref('users/' + userAddress).once('value');
+                if (userSnap.exists()) {
+                    window.location.href = 'dashboard.html'; // توجيه للوحة التحكم مباشرة
+                    return;
+                }
 
-                    // حفظ البيانات فوراً في Firebase
-                    await database.ref('users/' + userAddr).set({
-                        wallet: userAddr,
-                        myId: myId,
-                        upline: new URLSearchParams(window.location.search).get('ref') || "none",
+                // ب. عملية الدفع (1 TON كمثال للتسجيل)
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 120,
+                    messages: [{
+                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // محفظة الاستلام
+                        amount: "1000000000" // 1 TON بالنانوتون
+                    }]
+                };
+
+                const result = await tonConnectUI.sendTransaction(transaction);
+
+                if (result) {
+                    // ج. إنشاء معرف جديد للمستخدم (مثلاً رقم عشوائي أو تسلسلي)
+                    const myNewId = Math.floor(1000 + Math.random() * 9000);
+
+                    // د. البحث عن عنوان محفظة الـ Upline بناءً على الـ ID
+                    const uplineSnap = await database.ref('ids/' + uplineIdFromURL).once('value');
+                    const uplineAddress = uplineSnap.exists() ? uplineSnap.val() : "AdminAddressHere"; 
+
+                    // هـ. حفظ بيانات المستخدم الجديد
+                    await database.ref('users/' + userAddress).set({
+                        myId: myNewId,
+                        upline: uplineIdFromURL,
+                        uplineAddress: uplineAddress,
                         level: 1,
-                        earnings: 0.2
+                        referrals: 0,
+                        teamSize: 0,
+                        wallet: userAddress
                     });
 
-                    window.location.href = "dashboard.html";
+                    // و. ربط الـ ID بالمحفظة للبحث السريع مستقبلاً
+                    await database.ref('ids/' + myNewId).set(userAddress);
+
+                    // ز. تفعيل المحرك: تحديث العدادات للقادة في الأعلى
+                    await updateMatrixLogic(uplineAddress);
+
+                    alert("Registration Successful!");
+                    window.location.href = 'dashboard.html';
                 }
             } catch (e) {
-                alert("فشل في إتمام العملية. تأكد من وجود رصيد كافٍ (1.1 TON) للرسوم.");
-                btn.innerText = "تأكيد الدفع الآن";
-                btn.disabled = false;
+                console.error(e);
+                alert("Transaction failed or canceled.");
+            }
+        }
+
+        // الحساب التلقائي للإحالات والفريق
+        async function updateMatrixLogic(uplineAddress) {
+            let currentLevelAddress = uplineAddress;
+
+            // تحديث 10 مستويات للأعلى (Team Size)
+            for (let i = 0; i < 10; i++) {
+                if (!currentLevelAddress || currentLevelAddress === "None") break;
+
+                const ref = database.ref('users/' + currentLevelAddress);
+                
+                await ref.transaction((userData) => {
+                    if (userData) {
+                        // إذا كان هذا هو الـ Upline المباشر، زد عداد الإحالات
+                        if (i === 0) {
+                            userData.referrals = (userData.referrals || 0) + 1;
+                        }
+                        // لكل القادة في السلسلة، زد حجم الفريق
+                        userData.teamSize = (userData.teamSize || 0) + 1;
+                    }
+                    return userData;
+                });
+
+                // جلب الـ Upline التالي للصعود في الشجرة
+                const snap = await database.ref('users/' + currentLevelAddress + '/uplineAddress').once('value');
+                currentLevelAddress = snap.val();
             }
         }
     </script>
