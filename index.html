@@ -13,27 +13,52 @@
         body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .active-level { border-color: rgba(59, 130, 246, 0.4); box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
+        .copy-anim:active { transform: scale(0.95); transition: 0.1s; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <nav class="flex justify-between items-center mb-16 max-w-7xl mx-auto">
+    <nav class="flex justify-between items-center mb-10 max-w-7xl mx-auto">
         <h1 class="text-3xl font-black italic uppercase tracking-tighter">FF <span class="text-blue-500">FORTONE</span></h1>
         <div id="ton-connect-btn"></div>
     </nav>
 
-    <div class="max-w-7xl mx-auto">
-        <div class="flex flex-col items-center mb-10">
-            <h2 class="text-sm font-black uppercase tracking-[0.4em] text-blue-500 mb-2">Matrix System</h2>
-            <div class="h-1 w-20 bg-blue-600 rounded-full"></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto mb-12">
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
+            <p id="user-id" class="text-2xl font-black italic mb-3">#------</p>
+            <div class="pt-2 border-t border-white/5">
+                <p class="text-gray-600 text-[9px] uppercase font-bold">Upline ID</p>
+                <p id="upline-id" class="text-sm font-bold text-blue-400">#------</p>
+            </div>
+        </div>
+        
+        <div onclick="copyReferral()" class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600 cursor-pointer copy-anim hover:bg-white/5 transition-all">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1 text-blue-500">Your Referral Link</p>
+            <p id="ref-link-text" class="text-xs font-bold text-gray-300 truncate mt-2 mb-1">Connect wallet to see link</p>
+            <p class="text-[8px] text-blue-600 font-bold uppercase tracking-widest">Click to copy</p>
         </div>
 
-        <div id="levels-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            </div>
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1 text-blue-500">Referrals</p>
+            <p id="referrals-count" class="text-2xl font-black italic">0 <span class="text-xs text-gray-500 uppercase not-italic">Direct</span></p>
+            <p class="text-[8px] text-blue-600 font-bold uppercase mt-2 italic">Network Growth</p>
+        </div>
+
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1 text-blue-500">My Team</p>
+            <p id="team-count" class="text-2xl font-black italic">0 <span class="text-xs text-gray-500 uppercase not-italic">Total</span></p>
+            <p class="text-[8px] text-blue-600 font-bold uppercase mt-2 italic">Active Members</p>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+        <h2 class="text-sm font-black uppercase tracking-[0.3em] mb-8 text-center text-gray-500">Marketing Levels</h2>
+        <div id="levels-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
+        // --- 1. CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -66,7 +91,25 @@
                 const userData = snap.val();
                 if (!userData) return;
 
+                const myId = userData.myId || "------";
+                document.getElementById('user-id').innerText = "#" + myId;
+                document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
+                
+                const fullRefLink = window.location.origin + "/index.html?ref=" + myId;
+                document.getElementById('ref-link-text').innerText = fullRefLink;
+
+                document.getElementById('referrals-count').innerHTML = `${userData.referrals || 0} <span class="text-xs text-gray-500 uppercase not-italic">Direct</span>`;
+                document.getElementById('team-count').innerHTML = `${userData.teamSize || 0} <span class="text-xs text-gray-500 uppercase not-italic">Total</span>`;
+
                 renderLevels(userData.level || 0, address);
+            });
+        }
+
+        function copyReferral() {
+            const link = document.getElementById('ref-link-text').innerText;
+            if (link.includes("Connect")) return;
+            navigator.clipboard.writeText(link).then(() => {
+                alert("Referral link copied to clipboard!");
             });
         }
 
