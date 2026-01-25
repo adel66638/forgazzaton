@@ -12,13 +12,8 @@
     <style>
         body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        
-        /* الحالة المفعّلة - أخضر */
-        .level-active { border-color: #22c55e !important; box-shadow: 0 0 15px rgba(34, 197, 94, 0.1); }
-        
-        /* الحالة غير المفعّلة - أزرق سماوي */
-        .level-locked { border-color: #0ea5e9 !important; }
-        
+        .level-active { border: 2px solid #22c55e !important; box-shadow: 0 0 15px rgba(34, 197, 94, 0.1); }
+        .level-locked { border: 2px solid #0ea5e9 !important; }
         .copy-anim:active { transform: scale(0.95); transition: 0.1s; }
     </style>
 </head>
@@ -29,20 +24,19 @@
         <div id="ton-connect-btn"></div>
     </nav>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-12">
-        <div class="glass p-8 rounded-[2.5rem] border-t-2 border-sky-400">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
+        <div class="glass p-8 rounded-[2.5rem] border-t-2 border-sky-400 text-center">
+            <p class="text-gray-500 text-[10px] uppercase font-black mb-1">Your ID</p>
             <p id="user-id" class="text-3xl font-black italic mb-4 text-sky-400">#------</p>
             <div class="pt-3 border-t border-white/5">
-                <p class="text-gray-600 text-[9px] uppercase font-bold">Upline ID</p>
-                <p id="upline-id" class="text-lg font-bold text-sky-300">#------</p>
+                <p id="upline-id" class="text-sm font-bold text-sky-300 uppercase italic">Upline: #------</p>
             </div>
         </div>
         
-        <div onclick="copyReferral()" class="glass p-8 rounded-[2.5rem] border-t-2 border-sky-400 cursor-pointer copy-anim hover:bg-white/5 transition-all flex flex-col justify-center text-center">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1 text-sky-400">Your Referral Link</p>
-            <p id="ref-link-text" class="text-sm font-bold text-gray-300 truncate mt-2 mb-2 px-4">Connect wallet to see link</p>
-            <p class="text-[9px] text-sky-500 font-bold uppercase tracking-widest">Click to copy link</p>
+        <div onclick="copyReferral()" class="glass p-8 rounded-[2.5rem] border-t-2 border-sky-400 cursor-pointer copy-anim hover:bg-white/5 flex flex-col justify-center text-center">
+            <p class="text-gray-500 text-[10px] uppercase font-black mb-1 text-sky-400">Referral Link</p>
+            <p id="ref-link-text" class="text-xs font-bold text-gray-400 truncate mt-2 mb-2">Connect wallet...</p>
+            <p class="text-[9px] text-sky-500 font-bold uppercase tracking-widest">Click to copy</p>
         </div>
     </div>
 
@@ -52,19 +46,18 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURATION ---
+        // --- ضع هنا بيانات Firebase الخاصة بك ---
         const firebaseConfig = {
-            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
+            apiKey: "AIzaSy...", 
             authDomain: "ff-fortone.firebaseapp.com",
             databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
             projectId: "ff-fortone",
             storageBucket: "ff-fortone.appspot.com",
             messagingSenderId: "890615410300",
-            appId: "1:890615410300:web:5659f9..."
+            appId: "1:890615410300:web:..."
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-
         const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
 
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
@@ -81,10 +74,9 @@
             database.ref('users/' + address).on('value', (snap) => {
                 const userData = snap.val();
                 if (!userData) return;
-                const myId = userData.myId || "------";
-                document.getElementById('user-id').innerText = "#" + myId;
-                document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
-                document.getElementById('ref-link-text').innerText = window.location.origin + "/index.html?ref=" + myId;
+                document.getElementById('user-id').innerText = "#" + (userData.myId || "---");
+                document.getElementById('upline-id').innerText = "Upline: #" + (userData.upline || "1");
+                document.getElementById('ref-link-text').innerText = window.location.origin + "/index.html?ref=" + userData.myId;
                 renderLevels(userData.level || 0, address);
             });
         }
@@ -92,30 +84,24 @@
         function copyReferral() {
             const link = document.getElementById('ref-link-text').innerText;
             if (link.includes("Connect")) return;
-            navigator.clipboard.writeText(link).then(() => alert("Referral link copied!"));
+            navigator.clipboard.writeText(link).then(() => alert("Copied!"));
         }
 
         function renderLevels(currentLvl, address) {
             const grid = document.getElementById('levels-grid');
             grid.innerHTML = "";
-
             for (let i = 1; i <= 20; i++) {
                 let price = LEVEL_PRICES[i];
                 let isActive = i <= currentLvl;
-
                 grid.innerHTML += `
-                    <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'level-active' : 'level-locked'}">
-                        <div class="flex justify-between items-start mb-4">
-                            <p class="text-[8px] font-black ${isActive ? 'text-green-500' : 'text-sky-400'} uppercase italic">Level ${i}</p>
-                            ${isActive ? '<span class="text-[7px] text-green-500 font-bold bg-green-500/10 px-2 py-0.5 rounded-full uppercase">Activated</span>' : ''}
+                    <div class="glass p-6 rounded-[2rem] text-center transition-all ${isActive ? 'level-active' : 'level-locked'}">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[8px] font-black ${isActive ? 'text-green-500' : 'text-sky-400'} uppercase">LVL ${i}</span>
+                            ${isActive ? '<span class="text-[7px] text-green-500 font-bold uppercase">Active</span>' : ''}
                         </div>
-                        <p class="text-2xl font-black italic mb-6">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
+                        <p class="text-2xl font-black italic mb-6">${price} TON</p>
                         <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}')`}" 
-                            class="w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all 
-                            ${isActive ? 
-                                'bg-green-600/20 text-green-500 cursor-default border border-green-500/30' : 
-                                'bg-sky-500 hover:bg-sky-400 shadow-lg shadow-sky-900/30 text-white'}"
-                            ${isActive ? 'disabled' : ''}>
+                            class="w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-widest ${isActive ? 'bg-green-600/20 text-green-500' : 'bg-sky-500 text-white shadow-lg shadow-sky-900/40'}">
                             ${isActive ? 'ACTIVATED' : 'UPGRADE'}
                         </button>
                     </div>`;
