@@ -13,6 +13,7 @@
         body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .active-level { border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+        .copy-anim:active { transform: scale(0.95); transition: 0.1s; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -32,9 +33,10 @@
             </div>
         </div>
         
-        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Status</p>
-            <p id="status-text" class="text-2xl font-black italic text-green-500">LOADING...</p>
+        <div onclick="copyReferral()" class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500 cursor-pointer copy-anim hover:bg-white/5 transition-all">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1 text-green-500">Your Referral Link</p>
+            <p id="ref-link-text" class="text-xs font-bold text-gray-300 truncate mt-2 mb-1">Connect wallet to see link</p>
+            <p class="text-[8px] text-green-600 font-bold uppercase tracking-widest">Click to copy</p>
         </div>
 
         <div class="glass p-6 rounded-[2.5rem] border-t-2 border-yellow-500">
@@ -94,16 +96,29 @@
                 const userData = snap.val();
                 if (!userData) return;
 
-                document.getElementById('user-id').innerText = "#" + (userData.myId || "------");
+                const myId = userData.myId || "------";
+                document.getElementById('user-id').innerText = "#" + myId;
                 document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
-                document.getElementById('status-text').innerText = userData.level >= 1 ? "ACTIVE" : "INACTIVE";
-                document.getElementById('current-level').innerText = "Level " + userData.level;
+                document.getElementById('current-level').innerText = "Level " + (userData.level || 0);
                 
-                // تحديث بيانات الإحالات والفريق
+                // تحديث رابط الإحالة
+                const fullRefLink = window.location.origin + "/index.html?ref=" + myId;
+                document.getElementById('ref-link-text').innerText = fullRefLink;
+
                 document.getElementById('referrals-count').innerHTML = `${userData.referrals || 0} <span class="text-xs text-gray-500 uppercase not-italic">Direct</span>`;
                 document.getElementById('team-count').innerHTML = `${userData.teamSize || 0} <span class="text-xs text-gray-500 uppercase not-italic">Total</span>`;
 
-                renderLevels(userData.level, address);
+                renderLevels(userData.level || 0, address);
+            });
+        }
+
+        // وظيفة نسخ الرابط
+        function copyReferral() {
+            const link = document.getElementById('ref-link-text').innerText;
+            if (link.includes("Connect")) return;
+            
+            navigator.clipboard.writeText(link).then(() => {
+                alert("Referral link copied to clipboard!");
             });
         }
 
