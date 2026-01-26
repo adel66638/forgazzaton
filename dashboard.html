@@ -13,8 +13,6 @@
         body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .active-level { border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
-        input, select { outline: none; transition: all 0.3s; }
-        input:focus, select:focus { border-color: #2563eb !important; background: rgba(255, 255, 255, 0.05) !important; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -45,7 +43,7 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto mb-4">
+    <div class="max-w-7xl mx-auto mb-6">
         <div class="glass p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-blue-500">
             <div class="flex-1">
                 <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your Referral Link</p>
@@ -58,22 +56,17 @@
     </div>
 
     <div class="max-w-7xl mx-auto mb-12">
-        <div class="glass p-6 rounded-2xl border-l-4 border-green-500">
-            <h3 class="text-sm font-black uppercase tracking-widest mb-4 text-white">Withdraw Earnings</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input type="number" id="withdrawAmount" placeholder="Amount (TON)" 
-                    class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:ring-1 focus:ring-blue-500">
-                
-                <select id="withdrawMethod" class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-gray-300">
-                    <option value="ton" class="bg-[#010413]">TON Wallet</option>
-                    <option value="usdt" class="bg-[#010413]">USDT (TRC20)</option>
-                </select>
-
-                <button onclick="handleWithdraw()" class="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl text-xs font-black uppercase transition-all shadow-lg shadow-green-900/40">
-                    Request Withdrawal
-                </button>
+        <div class="glass p-6 rounded-[2rem] border-b-2 border-yellow-500 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+                <p class="text-gray-500 text-[10px] uppercase font-black tracking-[0.2em] mb-1">Total Earned</p>
+                <div class="flex items-baseline gap-2">
+                    <p id="total-earned" class="text-4xl font-black italic text-white">0.00</p>
+                    <span class="text-yellow-500 font-bold italic">TON</span>
+                </div>
             </div>
-            <p id="withdrawMessage" class="mt-3 text-[10px] font-bold uppercase hidden"></p>
+            <button onclick="requestWithdraw()" class="w-full md:w-auto bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black px-12 py-4 rounded-2xl text-sm font-black uppercase transition-all transform hover:scale-105 shadow-xl shadow-yellow-900/20">
+                Withdraw Balance
+            </button>
         </div>
     </div>
 
@@ -83,7 +76,7 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURATION (معلوماتك الأصلية كما هي) ---
+        // --- CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -111,22 +104,14 @@
             }
         });
 
-        // وظيفة سحب الرصيد الجديدة
-        function handleWithdraw() {
-            const amount = document.getElementById('withdrawAmount').value;
-            const method = document.getElementById('withdrawMethod').value;
-            const msg = document.getElementById('withdrawMessage');
-            
-            if(!amount || amount <= 0) {
-                msg.innerText = "Please enter a valid amount";
-                msg.className = "mt-3 text-[10px] font-bold uppercase text-red-500 block";
-                return;
+        // وظيفة السحب
+        function requestWithdraw() {
+            const balance = document.getElementById('total-earned').innerText;
+            if (parseFloat(balance) <= 0) {
+                alert("You don't have enough balance to withdraw.");
+            } else {
+                alert(`Withdrawal request for ${balance} TON has been submitted!`);
             }
-
-            // هنا يمكنك إضافة كود إرسال الطلب لـ Firebase لاحقاً
-            msg.innerText = `Request sent: ${amount} TON via ${method.toUpperCase()}. Processing...`;
-            msg.className = "mt-3 text-[10px] font-bold uppercase text-green-500 block";
-            document.getElementById('withdrawAmount').value = "";
         }
 
         async function loadUserData(address) {
@@ -155,6 +140,9 @@
                 document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
                 document.getElementById('direct-refs').innerText = directCount;
                 document.getElementById('indirect-refs').innerText = indirectCount;
+                
+                // تحديث الأرباح (إذا كانت موجودة في قاعدة البيانات، وإلا تظهر 0)
+                document.getElementById('total-earned').innerText = userData.earnings || "0.00";
 
                 const baseUrl = window.location.origin;
                 document.getElementById('ref-link-text').innerText = `${baseUrl}/index.html?ref=${myId}`;
