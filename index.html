@@ -50,7 +50,7 @@
     </main>
 
     <script>
-        // --- 1. إعداد Firebase (نفس إعداداتك السابقة) ---
+        // --- 1. إعداد Firebase (معلوماتك الأصلية محفوظة) ---
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -63,21 +63,21 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // التقاط الإحالة من الرابط
+        // التقاط الإحالة من الرابط وحفظها مؤقتاً
         const urlParams = new URLSearchParams(window.location.search);
-        const refIdFromUrl = urlParams.get('ref');
-        if (refIdFromUrl) sessionStorage.setItem('pending_upline', refIdFromUrl);
+        const refFromUrl = urlParams.get('ref');
+        if (refFromUrl) sessionStorage.setItem('pending_upline', refFromUrl);
 
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-btn'
         });
 
+        // مراقبة حالة المحفظة
         tonConnectUI.onStatusChange(async wallet => {
             const btnText = document.getElementById('buttonText');
             if (wallet) {
                 const address = wallet.account.address;
-                // فحص قاعدة البيانات بدلاً من localStorage
                 const snap = await database.ref('users/' + address).get();
                 if (snap.exists() && snap.val().level > 0) {
                     btnText.innerText = "Open Dashboard";
@@ -97,13 +97,15 @@
 
             const address = tonConnectUI.wallet.account.address;
             const userRef = database.ref('users/' + address);
-            const snap = await userRef.get();
+            const userSnap = await userRef.get();
 
-            if (snap.exists() && snap.val().level > 0) {
+            // إذا كان مسجلاً مسبقاً، يفتح الداشبورد
+            if (userSnap.exists() && userSnap.val().level > 0) {
                 window.location.href = 'dashboard.html';
                 return;
             }
 
+            // معاملة الدفع (1 TON للانضمام)
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 360,
                 messages: [{
@@ -115,35 +117,37 @@
             try {
                 const result = await tonConnectUI.sendTransaction(transaction);
                 if (result) {
-                    // --- الخطوة السحرية: ربط المشترك الجديد بالداعي وتحديث العدادات ---
                     const pendingUplineId = sessionStorage.getItem('pending_upline') || "1000";
                     
-                    // جلب عنوان محفظة الداعي لزيادة عداده
-                    const uplineSnap = await database.ref('users').orderByChild('myId').equalTo(pendingUplineId).once('value');
-                    let uplineWallet = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx"; 
-                    if (uplineSnap.exists()) {
-                        uplineWallet = Object.keys(uplineSnap.val())[0];
+                    // البحث عن عنوان محفظة الداعي (الأب)
+                    const uplineQuery = await database.ref('users').orderByChild('myId').equalTo(pendingUplineId).once('value');
+                    let uplineWallet = "";
+                    if (uplineQuery.exists()) {
+                        uplineWallet = Object.keys(uplineQuery.val())[0];
                     }
 
-                    // 1. إنشاء حساب المشترك الجديد
-                    const newUserData = {
-                        myId: Math.floor(100000 + Math.random() * 900000).toString(),
+                    // 1. إنشاء حساب جديد للمشترك
+                    const newId = Math.floor(100000 + Math.random() * 900000).toString();
+                    await userRef.set({
+                        myId: newId,
                         level: 1,
                         upline: pendingUplineId,
                         uplineAddress: uplineWallet,
                         directReferrals: 0,
                         indirectReferrals: 0
-                    };
-                    await userRef.set(newUserData);
+                    });
 
-                    // 2. زيادة العداد المباشر للأب (Direct)
+                    // 2. تحديث عدادات الأب والجد (تشغيل العدادات المباشرة وغير المباشرة)
                     if (uplineWallet) {
+                        // زيادة العداد المباشر (Direct) للأب
                         await database.ref('users/' + uplineWallet).child('directReferrals').transaction(c => (c || 0) + 1);
                         
-                        // 3. زيادة العداد غير المباشر للجد (Indirect)
+                        // جلب بيانات الأب لمعرفة الجد
                         const fatherSnap = await database.ref('users/' + uplineWallet).get();
                         const grandWallet = fatherSnap.val()?.uplineAddress;
+                        
                         if (grandWallet) {
+                            // زيادة العداد غير المباشر (Indirect) للجد
                             await database.ref('users/' + grandWallet).child('indirectReferrals').transaction(c => (c || 0) + 1);
                         }
                     }
@@ -151,7 +155,7 @@
                     window.location.href = 'dashboard.html';
                 }
             } catch (e) {
-                alert("Payment Pending or Failed.");
+                alert("Transaction canceled or failed. Please try again.");
             }
         }
     </script>
