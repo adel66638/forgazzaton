@@ -22,7 +22,7 @@
         <div id="ton-connect-btn"></div>
     </nav>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-7xl mx-auto mb-12">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-7xl mx-auto mb-6">
         <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
             <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
             <p id="user-id" class="text-2xl font-black italic mb-3">#------</p>
@@ -33,18 +33,30 @@
         </div>
         
         <div class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Account Status</p>
-            <p id="status-text" class="text-2xl font-black italic text-green-500">LOADING...</p>
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Referrals (Direct / Indirect)</p>
+            <div class="flex items-baseline gap-2">
+                <p id="direct-refs" class="text-2xl font-black italic text-green-500">0</p>
+                <span class="text-gray-600">/</span>
+                <p id="indirect-refs" class="text-xl font-black italic text-gray-400">0</p>
+            </div>
+            <p class="text-[9px] text-gray-500 mt-2 uppercase font-bold tracking-tighter">Total Team Members</p>
         </div>
 
         <div class="glass p-6 rounded-[2.5rem] border-t-2 border-yellow-500">
             <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Active Level</p>
             <p id="current-level" class="text-2xl font-black italic">Level --</p>
         </div>
+    </div>
 
-        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-purple-500">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Total Earnings</p>
-            <p id="earnings" class="text-2xl font-black italic">0.00 <span class="text-xs text-gray-500">TON</span></p>
+    <div class="max-w-7xl mx-auto mb-12">
+        <div class="glass p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-blue-500">
+            <div class="flex-1">
+                <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your Referral Link</p>
+                <p id="ref-link-text" class="text-sm font-mono text-blue-300 break-all">Connect wallet to see link...</p>
+            </div>
+            <button onclick="copyRefLink()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl text-xs font-black uppercase transition-all shadow-lg shadow-blue-900/40">
+                Copy Link
+            </button>
         </div>
     </div>
 
@@ -54,7 +66,7 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURATION ---
+        // --- 1. CONFIGURATION (كافة معلوماتك الأصلية محفوظة هنا) ---
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -69,7 +81,6 @@
 
         const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
 
-        // --- 2. TON CONNECT SETUP ---
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-btn'
@@ -77,11 +88,22 @@
 
         tonConnectUI.onStatusChange(wallet => {
             if (wallet) {
-                loadUserData(wallet.account.address);
+                const userAddress = wallet.account.address;
+                loadUserData(userAddress);
+                const baseUrl = window.location.origin;
+                document.getElementById('ref-link-text').innerText = `${baseUrl}/index.html?ref=${userAddress}`;
             } else {
                 window.location.href = 'index.html';
             }
         });
+
+        function copyRefLink() {
+            const link = document.getElementById('ref-link-text').innerText;
+            if (link.includes('http')) {
+                navigator.clipboard.writeText(link);
+                alert("Referral link copied successfully!");
+            }
+        }
 
         // --- 3. DATA MANAGEMENT ---
         async function loadUserData(address) {
@@ -91,9 +113,12 @@
 
                 document.getElementById('user-id').innerText = "#" + (userData.myId || "------");
                 document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
-                document.getElementById('status-text').innerText = userData.level >= 1 ? "ACTIVE" : "INACTIVE";
+                
+                // تحديث بيانات الإحالات من قاعدة بياناتك
+                document.getElementById('direct-refs').innerText = userData.directReferrals || 0;
+                document.getElementById('indirect-refs').innerText = userData.indirectReferrals || 0;
+                
                 document.getElementById('current-level').innerText = "Level " + userData.level;
-                document.getElementById('earnings').innerText = (userData.earnings || 0).toFixed(2) + " TON";
 
                 renderLevels(userData.level, address);
             });
@@ -102,11 +127,9 @@
         function renderLevels(currentLvl, address) {
             const grid = document.getElementById('levels-grid');
             grid.innerHTML = "";
-
             for (let i = 1; i <= 20; i++) {
                 let price = LEVEL_PRICES[i];
                 let isActive = i <= currentLvl;
-
                 grid.innerHTML += `
                     <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'active-level' : 'border-white/5'}">
                         <div class="flex justify-between items-start mb-4">
@@ -116,9 +139,7 @@
                         <p class="text-2xl font-black italic mb-6">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
                         <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}')`}" 
                             class="w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all 
-                            ${isActive ? 
-                                'bg-green-600/10 text-green-500 cursor-default border border-green-500/20' : 
-                                'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/30'}"
+                            ${isActive ? 'bg-green-600/10 text-green-500 cursor-default border border-green-500/20' : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/30'}"
                             ${isActive ? 'disabled' : ''}>
                             ${isActive ? 'ACTIVATED' : 'UPGRADE'}
                         </button>
@@ -126,45 +147,33 @@
             }
         }
 
-        // --- 4. UPGRADE FUNCTION (MODIFIED) ---
+        // --- 4. UPGRADE FUNCTION (بمنطق الـ 0.8 المحفوظ) ---
         async function upgradeLevel(level, price, address) {
             try {
-                let finalAmount;
-                
-                // تطبيق منطقك الخاص: المستوى الأول يسحب 0.8 فقط ليبقى 0.2 للمشترك
-                if (level === 1) {
-                    finalAmount = (0.8 * 1e9).toString(); 
-                } else {
-                    finalAmount = (BigInt(price) * BigInt(1e9)).toString();
-                }
-
+                let finalAmount = (level === 1) ? (0.8 * 1e9).toString() : (BigInt(price) * BigInt(1e9)).toString();
                 const transaction = {
                     validUntil: Math.floor(Date.now() / 1000) + 120,
                     messages: [{
-                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
+                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", // محفظتك محفوظة
                         amount: finalAmount
                     }]
                 };
-
                 const result = await tonConnectUI.sendTransaction(transaction);
-
                 if (result) {
-                    // تحديث Firebase فوراً لفتح الداشبورد
-                    await database.ref('users/' + address).update({
-                        level: level
-                    });
+                    // تحديث الحالة فوراً لفتح الداشبورد
+                    await database.ref('users/' + address).update({ level: level });
                     
-                    // رسالة نجاح مخصصة للمستوى الأول
+                    // منطق زيادة الإحالات التلقائي
                     if (level === 1) {
-                        alert("Success! 0.8 TON paid. 0.2 TON remains in your wallet. Level 1 Active!");
-                    } else {
-                        alert("Success! Level " + level + " is now active.");
+                        const snap = await database.ref('users/' + address).get();
+                        const upAddr = snap.val()?.uplineAddress;
+                        if (upAddr) {
+                            await database.ref('users/' + upAddr).child('directReferrals').transaction(c => (c || 0) + 1);
+                        }
                     }
+                    alert("Success! Upgrade completed.");
                 }
-            } catch (e) {
-                console.error(e);
-                alert("Transaction failed. Make sure you have enough TON.");
-            }
+            } catch (e) { console.error(e); }
         }
     </script>
 </body>
