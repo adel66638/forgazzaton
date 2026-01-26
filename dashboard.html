@@ -13,6 +13,8 @@
         body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .active-level { border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+        input, select { outline: none; transition: all 0.3s; }
+        input:focus, select:focus { border-color: #2563eb !important; background: rgba(255, 255, 255, 0.05) !important; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -43,7 +45,7 @@
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto mb-12">
+    <div class="max-w-7xl mx-auto mb-4">
         <div class="glass p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-blue-500">
             <div class="flex-1">
                 <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your Referral Link</p>
@@ -52,6 +54,26 @@
             <button onclick="copyRefLink()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl text-xs font-black uppercase transition-all shadow-lg shadow-blue-900/40">
                 Copy Link
             </button>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto mb-12">
+        <div class="glass p-6 rounded-2xl border-l-4 border-green-500">
+            <h3 class="text-sm font-black uppercase tracking-widest mb-4 text-white">Withdraw Earnings</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="number" id="withdrawAmount" placeholder="Amount (TON)" 
+                    class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:ring-1 focus:ring-blue-500">
+                
+                <select id="withdrawMethod" class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-gray-300">
+                    <option value="ton" class="bg-[#010413]">TON Wallet</option>
+                    <option value="usdt" class="bg-[#010413]">USDT (TRC20)</option>
+                </select>
+
+                <button onclick="handleWithdraw()" class="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl text-xs font-black uppercase transition-all shadow-lg shadow-green-900/40">
+                    Request Withdrawal
+                </button>
+            </div>
+            <p id="withdrawMessage" class="mt-3 text-[10px] font-bold uppercase hidden"></p>
         </div>
     </div>
 
@@ -89,6 +111,24 @@
             }
         });
 
+        // وظيفة سحب الرصيد الجديدة
+        function handleWithdraw() {
+            const amount = document.getElementById('withdrawAmount').value;
+            const method = document.getElementById('withdrawMethod').value;
+            const msg = document.getElementById('withdrawMessage');
+            
+            if(!amount || amount <= 0) {
+                msg.innerText = "Please enter a valid amount";
+                msg.className = "mt-3 text-[10px] font-bold uppercase text-red-500 block";
+                return;
+            }
+
+            // هنا يمكنك إضافة كود إرسال الطلب لـ Firebase لاحقاً
+            msg.innerText = `Request sent: ${amount} TON via ${method.toUpperCase()}. Processing...`;
+            msg.className = "mt-3 text-[10px] font-bold uppercase text-green-500 block";
+            document.getElementById('withdrawAmount').value = "";
+        }
+
         async function loadUserData(address) {
             database.ref('users/' + address).on('value', async (snap) => {
                 const userData = snap.val();
@@ -96,13 +136,9 @@
 
                 const myId = userData.myId || "------";
 
-                // --- استرداد الإحالات السابقة والحالية بعملية جرد شاملة ---
-                
-                // 1. حساب الإحالات المباشرة (كل من يحمل معرفك كداعي)
                 const directQuery = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
                 const directCount = directQuery.numChildren();
 
-                // 2. حساب الإحالات غير المباشرة (فريق فريقك)
                 let indirectCount = 0;
                 if (directQuery.exists()) {
                     const children = directQuery.val();
@@ -115,7 +151,6 @@
                     }
                 }
 
-                // تحديث الواجهة بالقيم الحقيقية المستخرجة
                 document.getElementById('user-id').innerText = "#" + myId;
                 document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
                 document.getElementById('direct-refs').innerText = directCount;
@@ -165,7 +200,6 @@
                 if (result) {
                     await database.ref('users/' + address).update({ level: level });
                     alert("Success! Upgrade completed.");
-                    // العداد سيقوم بتحديث نفسه تلقائياً بفضل دالة loadUserData
                 }
             } catch (e) { console.error(e); }
         }
