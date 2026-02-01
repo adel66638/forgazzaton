@@ -13,6 +13,9 @@
         body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .active-level { border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+        /* ستايل مخصص لشريط التمرير في القائمة */
+        #referrals-container::-webkit-scrollbar { width: 4px; }
+        #referrals-container::-webkit-scrollbar-thumb { background: #22c55e; border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -32,14 +35,29 @@
             </div>
         </div>
         
-        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500">
+        <div onclick="openReferralList()" class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500 cursor-pointer hover:bg-white/5 transition-all transform active:scale-95">
             <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Referrals (Direct / Indirect)</p>
             <div class="flex items-baseline gap-2">
                 <p id="direct-refs" class="text-2xl font-black italic text-green-500">0</p>
                 <span class="text-gray-600">/</span>
                 <p id="indirect-refs" class="text-xl font-black italic text-gray-400">0</p>
             </div>
-            <p class="text-[9px] text-gray-500 mt-2 uppercase font-bold tracking-tighter">Live Team Tracking</p>
+            <p class="text-[9px] text-gray-500 mt-2 uppercase font-bold tracking-tighter">Live Team Tracking (Click to View)</p>
+        </div>
+    </div>
+
+    <div id="referral-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-[2.5rem] border-t-2 border-green-500 overflow-hidden">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                <h3 class="text-xl font-black italic uppercase">My Team <span class="text-green-500">List</span></h3>
+                <button onclick="toggleModal(false)" class="text-gray-500 hover:text-white text-3xl font-light">&times;</button>
+            </div>
+            <div id="referrals-container" class="p-6 max-h-[60vh] overflow-y-auto space-y-3">
+                <p class="text-center text-gray-500 text-xs italic">Select a wallet to see team...</p>
+            </div>
+            <div class="p-4 bg-white/5 text-center">
+                <button onclick="toggleModal(false)" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white">Close Window</button>
+            </div>
         </div>
     </div>
 
@@ -104,16 +122,72 @@
             }
         });
 
-        // وظيفة السحب
-        function requestWithdraw() {
-            const balance = document.getElementById('total-earned').innerText;
-            if (parseFloat(balance) <= 0) {
-                alert("You don't have enough balance to withdraw.");
-            } else {
-                alert(`Withdrawal request for ${balance} TON has been submitted!`);
+        // --- REFERRAL MODAL LOGIC ---
+        function toggleModal(show) {
+            const modal = document.getElementById('referral-modal');
+            modal.classList.toggle('hidden', !show);
+        }
+
+        async function openReferralList() {
+            toggleModal(true);
+            const container = document.getElementById('referrals-container');
+            const userFullId = document.getElementById('user-id').innerText.replace('#', '');
+            
+            if (userFullId === "------") {
+                container.innerHTML = '<p class="text-center text-red-400 text-xs italic font-black uppercase">Please connect wallet first</p>';
+                return;
+            }
+
+            container.innerHTML = '<p class="text-center text-gray-500 text-xs italic">Searching team database...</p>';
+
+            try {
+                const snapshot = await database.ref('users').orderByChild('upline').equalTo(userFullId).once('value');
+                let htmlContent = '';
+
+                if (snapshot.exists()) {
+                    const users = snapshot.val();
+                    for (let addr in users) {
+                        const user = users[addr];
+                        // عرض العضو المباشر
+                        htmlContent += `
+                            <div class="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-green-500/20">
+                                <div>
+                                    <p class="text-xs font-black text-green-400">#${user.myId}</p>
+                                    <p class="text-[8px] text-gray-500 uppercase font-bold">Direct Member</p>
+                                </div>
+                                <span class="text-[10px] bg-green-500/10 text-green-500 px-2 py-1 rounded-lg font-bold italic underline">Lvl ${user.level || 1}</span>
+                            </div>
+                        `;
+                        
+                        // البحث عن الأعضاء غير المباشرين التابعين لهذا العضو المباشر
+                        const indirectSnap = await database.ref('users').orderByChild('upline').equalTo(user.myId).once('value');
+                        if (indirectSnap.exists()) {
+                            const indirectUsers = indirectSnap.val();
+                            for (let indAddr in indirectUsers) {
+                                const indUser = indirectUsers[indAddr];
+                                htmlContent += `
+                                    <div class="flex justify-between items-center bg-blue-500/5 p-3 rounded-2xl border border-blue-500/10 ml-6">
+                                        <div>
+                                            <p class="text-xs font-black text-blue-400">#${indUser.myId}</p>
+                                            <p class="text-[8px] text-gray-600 uppercase font-bold">Indirect Member</p>
+                                        </div>
+                                        <span class="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded-lg font-bold">Lvl ${indUser.level || 1}</span>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }
+                    container.innerHTML = htmlContent;
+                } else {
+                    container.innerHTML = '<div class="text-center py-10"><p class="text-gray-500 text-xs font-black uppercase tracking-widest">No members found yet</p></div>';
+                }
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = '<p class="text-center text-red-500 text-xs font-black">Error loading team data</p>';
             }
         }
 
+        // --- DASHBOARD FUNCTIONS ---
         async function loadUserData(address) {
             database.ref('users/' + address).on('value', async (snap) => {
                 const userData = snap.val();
@@ -140,8 +214,6 @@
                 document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
                 document.getElementById('direct-refs').innerText = directCount;
                 document.getElementById('indirect-refs').innerText = indirectCount;
-                
-                // تحديث الأرباح (إذا كانت موجودة في قاعدة البيانات، وإلا تظهر 0)
                 document.getElementById('total-earned').innerText = userData.earnings || "0.00";
 
                 const baseUrl = window.location.origin;
@@ -199,6 +271,16 @@
                 alert("Referral link copied!");
             }
         }
+
+        function requestWithdraw() {
+            const balance = document.getElementById('total-earned').innerText;
+            if (parseFloat(balance) <= 0) {
+                alert("You don't have enough balance to withdraw.");
+            } else {
+                alert(`Withdrawal request for ${balance} TON has been submitted!`);
+            }
+        }
     </script>
 </body>
-</html>
+    </html>
+    
