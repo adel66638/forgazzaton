@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE | Master Dashboard</title>
+    <title>FF FORTONE | Smart Protocol</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -27,13 +27,200 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-7xl mx-auto mb-6">
         <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
-            <p id="user-id" class="text-2xl font-black italic mb-3">#------</p>
-            <div class="pt-2 border-t border-white/5 flex justify-between items-center">
+            <div class="flex justify-between items-start mb-4">
                 <div>
+                    <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
+                    <p id="user-id" class="text-2xl font-black italic">#------</p>
+                </div>
+                <div class="text-right">
                     <p class="text-gray-600 text-[9px] uppercase font-bold">Upline ID</p>
                     <p id="upline-id" class="text-sm font-bold text-blue-400">#------</p>
                 </div>
+            </div>
+            
+            <div class="p-3 bg-white/5 rounded-2xl border border-white/5 flex items-center justify-between gap-2">
+                <div class="overflow-hidden">
+                    <p class="text-[8px] text-gray-500 uppercase font-black mb-1">Your Referral Link</p>
+                    <p id="ref-link-text" class="text-[10px] font-mono text-blue-300 truncate">Connect wallet to see link</p>
+                </div>
+                <button onclick="copyRefLink()" class="bg-blue-600 hover:bg-blue-500 p-2.5 rounded-xl transition-all active:scale-90">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 002-2h4a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <div onclick="openReferralList()" class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500 cursor-pointer hover:bg-white/5 transition-all transform active:scale-95">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Team Partners</p>
+            <div class="flex items-baseline gap-2">
+                <p id="direct-refs" class="text-2xl font-black italic text-green-500">0</p>
+                <span class="text-gray-600 text-xs italic">Direct Referrals</span>
+            </div>
+            <p class="text-[9px] text-gray-500 mt-2 uppercase font-bold italic tracking-tighter">Tap to view wallets</p>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto mb-20">
+        <h2 class="text-sm font-black uppercase tracking-[0.3em] mb-8 text-center text-gray-500">Marketing Tiers (Instant 50/50)</h2>
+        <div id="levels-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+    </div>
+
+    <div id="admin-section" class="max-w-7xl mx-auto mb-20 hidden">
+        <div class="glass p-8 rounded-[3rem] border-t-4 border-purple-600 bg-purple-900/10">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <h2 class="text-2xl font-black uppercase italic text-purple-500">Owner Console</h2>
+                <input type="text" id="admin-search" onkeyup="filterAdminList()" placeholder="Search ID or Wallet..." 
+                    class="w-full md:w-80 bg-black/50 border border-white/10 rounded-2xl px-5 py-3 text-xs focus:border-purple-500 outline-none">
+            </div>
+            <div id="admin-data-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </div>
+
+    <div id="referral-modal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-[2.5rem] border-t-2 border-green-500">
+            <div class="p-6 flex justify-between items-center border-b border-white/5">
+                <h3 class="text-xl font-black italic uppercase font-black">Partner <span class="text-green-500">Network</span></h3>
+                <button onclick="toggleModal(false)" class="text-gray-500 text-3xl">&times;</button>
+            </div>
+            <div id="referrals-container" class="p-6 max-h-[60vh] overflow-y-auto space-y-3"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
+            authDomain: "ff-fortone.firebaseapp.com",
+            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
+            projectId: "ff-fortone",
+            storageBucket: "ff-fortone.appspot.com",
+            messagingSenderId: "890615410300",
+            appId: "1:890615410300:web:5659f9..."
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const MY_ADMIN_ID = "555497"; 
+        const TARGET_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx";
+        const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
+
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-btn'
+        });
+
+        tonConnectUI.onStatusChange(wallet => {
+            if (wallet) { loadUserData(wallet.account.address); }
+            else { window.location.href = 'index.html'; }
+        });
+
+        async function loadUserData(address) {
+            database.ref('users/' + address).on('value', async (snap) => {
+                const userData = snap.val();
+                if (!userData) return;
+
+                const myId = String(userData.myId || "");
+                if (myId === MY_ADMIN_ID) {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    loadAllUsersForAdmin();
+                }
+
+                document.getElementById('user-id').innerText = "#" + myId;
+                document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
+                
+                // تحديث رابط الإحالة
+                const baseUrl = window.location.origin + window.location.pathname.replace('dashboard.html', 'index.html');
+                document.getElementById('ref-link-text').innerText = `${baseUrl}?ref=${myId}`;
+
+                const directQuery = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
+                document.getElementById('direct-refs').innerText = directQuery.numChildren();
+
+                renderLevels(userData.level, address);
+            });
+        }
+
+        function copyRefLink() {
+            const link = document.getElementById('ref-link-text').innerText;
+            if (link.includes('Connect wallet')) return;
+            navigator.clipboard.writeText(link).then(() => alert("Link Copied!"));
+        }
+
+        function toggleModal(show) { document.getElementById('referral-modal').classList.toggle('hidden', !show); }
+
+        async function openReferralList() {
+            toggleModal(true);
+            const container = document.getElementById('referrals-container');
+            const myId = document.getElementById('user-id').innerText.replace('#', '');
+            container.innerHTML = '<p class="text-center text-gray-500 animate-pulse text-xs">LOADING...</p>';
+            const snap = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
+            if (snap.exists()) {
+                let html = '';
+                for (let wallet in snap.val()) {
+                    html += `<div class="bg-white/5 p-4 rounded-2xl border border-white/5"><p class="text-xs font-black text-green-400">#${snap.val()[wallet].myId}</p><p class="text-[8px] font-mono text-gray-500 break-all">${wallet}</p></div>`;
+                }
+                container.innerHTML = html;
+            } else { container.innerHTML = '<p class="text-center py-5 text-xs text-gray-600">No Partners Yet</p>'; }
+        }
+
+        function renderLevels(currentLvl, address) {
+            const grid = document.getElementById('levels-grid'); grid.innerHTML = "";
+            for (let i = 1; i <= 20; i++) {
+                let price = LEVEL_PRICES[i];
+                let isActive = i <= currentLvl;
+                grid.innerHTML += `
+                    <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'border-green-500/30 shadow-lg shadow-green-500/10' : 'border-white/5'}">
+                        <p class="text-[8px] font-black text-blue-500 uppercase italic mb-2">Level ${i}</p>
+                        <p class="text-xl font-black italic mb-5">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
+                        <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}')`}" 
+                            class="w-full py-3 rounded-xl text-[8px] font-black uppercase transition-all ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20'}">
+                            ${isActive ? 'ACTIVATED' : 'UPGRADE'}
+                        </button>
+                    </div>`;
+            }
+        }
+
+        async function upgradeLevel(level, price, address) {
+            try {
+                const userSnap = await database.ref('users/' + address).once('value');
+                const uplineId = userSnap.val().upline;
+                let recipientUpline = TARGET_WALLET;
+
+                if (uplineId && uplineId !== "None") {
+                    const uplineQuery = await database.ref('users').orderByChild('myId').equalTo(String(uplineId)).once('value');
+                    if (uplineQuery.exists()) recipientUpline = Object.keys(uplineQuery.val())[0];
+                }
+
+                const halfPrice = (price / 2) * 1e9;
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 120,
+                    messages: [
+                        { address: TARGET_WALLET, amount: halfPrice.toString() },
+                        { address: recipientUpline, amount: halfPrice.toString() }
+                    ]
+                };
+
+                const result = await tonConnectUI.sendTransaction(transaction);
+                if (result) {
+                    await database.ref('users/' + address).update({ level: level });
+                    alert("Success! 50/50 Payment Distributed.");
+                }
+            } catch (e) { alert("Transaction failed."); }
+        }
+
+        async function loadAllUsersForAdmin() {
+            const list = document.getElementById('admin-data-list');
+            const snap = await database.ref('users').once('value');
+            if (snap.exists()) {
+                let html = '';
+                for (let [wallet, data] of Object.entries(snap.val())) {
+                    html += `<div class="admin-card p-5 rounded-[2rem] border border-purple-500/20"><p class="text-lg font-black text-green-400">#${data.myId || '---'}</p><p class="text-[8px] font-mono text-blue-300 break-all mb-3">${wallet}</p><p class="text-[9px] font-black uppercase italic">Level: ${data.level || 1}</p></div>`;
+                }
+                list.innerHTML = html;
+            }
+        }
+    </script>
+</body>
+</html>
                 <div class="text-right">
                     <p class="text-[7px] text-green-500 font-black uppercase">Instant Payouts 50/50</p>
                 </div>
