@@ -45,6 +45,18 @@
             </div>
             <p class="text-[9px] text-gray-500 mt-2 uppercase font-bold italic tracking-tighter">View Your Network Wallets</p>
         </div>
+
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-purple-500 col-span-1 md:col-span-2">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-2">Share Your Referral Link</p>
+            <div class="flex flex-col sm:flex-row items-center gap-3 bg-black/40 p-3 rounded-2xl border border-white/5">
+                <input type="text" id="referral-url" readonly 
+                    class="bg-transparent border-none outline-none text-[11px] font-mono text-blue-300 w-full truncate" 
+                    value="Connecting wallet...">
+                <button onclick="copyReferralLink()" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-[10px] font-black px-6 py-2.5 rounded-xl transition-all active:scale-95">
+                    COPY LINK
+                </button>
+            </div>
+        </div>
     </div>
 
     <div id="referral-modal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
@@ -80,7 +92,6 @@
     </div>
 
     <script>
-        // --- Firebase Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -93,8 +104,7 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // إعدادات الأدمن
-        const MY_ADMIN_ID = "555497"; // هويتك الخاصة
+        const MY_ADMIN_ID = "555497"; 
         const TARGET_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx";
         const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
 
@@ -115,18 +125,35 @@
 
                 const myId = String(userData.myId || "");
 
-                // تفعيل لوحة الأدمن لك أنت فقط
+                // تحديث واجهة المستخدم ورابط الإحالة
+                document.getElementById('user-id').innerText = "#" + myId;
+                document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
+                
+                // توليد رابط الإحالة تلقائياً
+                const referralUrl = window.location.origin + "/index.html?ref=" + myId;
+                document.getElementById('referral-url').value = referralUrl;
+
                 if (myId === MY_ADMIN_ID) {
                     document.getElementById('admin-section').classList.remove('hidden');
                     loadAllUsersForAdmin();
                 }
 
                 const directQuery = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
-                document.getElementById('user-id').innerText = "#" + myId;
-                document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
                 document.getElementById('direct-refs').innerText = directQuery.numChildren();
 
                 renderLevels(userData.level, address);
+            });
+        }
+
+        // دالة نسخ رابط الإحالة
+        function copyReferralLink() {
+            const copyText = document.getElementById("referral-url");
+            if (copyText.value.includes('...')) return; 
+            
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                alert("Copied: " + copyText.value);
+            }).catch(err => {
+                console.error('Error copying text: ', err);
             });
         }
 
@@ -230,199 +257,5 @@
             } catch (e) { console.error(e); }
         }
     </script>
-</body>
-            </html>
-                <button onclick="selectAmount(10)" class="p-4 bg-blue-600 hover:bg-blue-700 rounded-lg">10 TON</button>
-            <button onclick="selectAmount(20)" class="p-4 bg-blue-600 hover:bg-blue-700 rounded-lg">20 TON</button>
-        </div>
-        <div class="mt-4">
-            <input type="number" id="custom-amount" placeholder="أدخل مبلغ مخصص" 
-                   class="w-full p-3 bg-gray-800 rounded-lg" oninput="updateCustomAmount()">
-        </div>
-    </div>
-
-    <!-- تفاصيل الدفع -->
-    <div class="card rounded-lg p-6 mb-6">
-        <h2 class="text-xl font-bold mb-4">تفاصيل التوزيع</h2>
-        
-        <div class="space-y-4">
-            <!-- المبلغ الإجمالي -->
-            <div class="p-4 bg-gray-800 rounded-lg">
-                <p class="text-gray-400">المبلغ الإجمالي</p>
-                <p class="text-2xl font-bold text-blue-400" id="total-amount">0 TON</p>
-            </div>
-            
-            <!-- للمشروع -->
-            <div class="p-4 bg-blue-900/30 rounded-lg">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="font-bold text-blue-400">للمشروع</p>
-                        <p class="text-gray-400">50% من المبلغ</p>
-                    </div>
-                    <p class="text-2xl font-bold" id="project-amount">0 TON</p>
-                </div>
-            </div>
-            
-            <!-- للمحيل -->
-            <div class="p-4 bg-green-900/30 rounded-lg">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="font-bold text-green-400">للمحيل</p>
-                        <p class="text-gray-400">50% من المبلغ</p>
-                    </div>
-                    <p class="text-2xl font-bold" id="upline-amount">0 TON</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- زر الدفع -->
-        <button onclick="processPayment()" class="w-full mt-6 p-4 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-xl">
-            تأكيد الدفع
-        </button>
-    </div>
-
-    <!-- سجل المدفوعات -->
-    <div class="card rounded-lg p-6">
-        <h2 class="text-xl font-bold mb-4">سجل المدفوعات</h2>
-        <div id="payment-history">
-            <!-- سيتم إضافة المدفوعات هنا -->
-        </div>
-    </div>
-</div>
-
-<script>
-// بيانات النظام
-const PROJECT_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx";
-let selectedAmount = 0;
-let paymentHistory = [];
-
-// اختيار المبلغ
-function selectAmount(amount) {
-    selectedAmount = amount;
-    document.getElementById('custom-amount').value = amount;
-    updatePaymentDetails();
-}
-
-// تحديث المبلغ المخصص
-function updateCustomAmount() {
-    const customAmount = parseFloat(document.getElementById('custom-amount').value) || 0;
-    selectedAmount = customAmount;
-    updatePaymentDetails();
-}
-
-// تحديث تفاصيل الدفع
-function updatePaymentDetails() {
-    if (selectedAmount <= 0) {
-        document.getElementById('total-amount').textContent = "0 TON";
-        document.getElementById('project-amount').textContent = "0 TON";
-        document.getElementById('upline-amount').textContent = "0 TON";
-        return;
-    }
-    
-    const halfAmount = (selectedAmount / 2).toFixed(2);
-    
-    document.getElementById('total-amount').textContent = selectedAmount + " TON";
-    document.getElementById('project-amount').textContent = halfAmount + " TON";
-    document.getElementById('upline-amount').textContent = halfAmount + " TON";
-}
-
-// معالجة الدفع
-function processPayment() {
-    if (selectedAmount <= 0) {
-        alert("الرجاء اختيار مبلغ للدفع");
-        return;
-    }
-    
-    if (!confirm(`تأكيد دفع ${selectedAmount} TON؟\n50% للمشروع و50% للمحيل`)) {
-        return;
-    }
-    
-    // محاكاة عملية الدفع
-    const payment = {
-        id: Date.now(),
-        amount: selectedAmount,
-        date: new Date().toLocaleString(),
-        project: (selectedAmount / 2).toFixed(2),
-        upline: (selectedAmount / 2).toFixed(2),
-        status: "مكتمل"
-    };
-    
-    // إضافة للسجل
-    paymentHistory.unshift(payment);
-    updatePaymentHistory();
-    
-    // رسالة نجاح
-    alert(`✅ تم الدفع بنجاح!\n\nالمشروع: ${payment.project} TON\nالمحيل: ${payment.upline} TON`);
-    
-    // إعادة التعيين
-    selectedAmount = 0;
-    document.getElementById('custom-amount').value = "";
-    updatePaymentDetails();
-}
-
-// تحديث سجل المدفوعات
-function updatePaymentHistory() {
-    const container = document.getElementById('payment-history');
-    
-    if (paymentHistory.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-center">لا توجد مدفوعات سابقة</p>';
-        return;
-    }
-    
-    let html = '';
-    paymentHistory.forEach(payment => {
-        html += `
-            <div class="p-4 mb-3 bg-gray-800 rounded-lg">
-                <div class="flex justify-between items-center mb-2">
-                    <div>
-                        <p class="font-bold">دفع #${payment.id.toString().slice(-6)}</p>
-                        <p class="text-gray-400 text-sm">${payment.date}</p>
-                    </div>
-                    <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg text-sm">${payment.status}</span>
-                </div>
-                <div class="grid grid-cols-2 gap-4 mt-3">
-                    <div class="p-2 bg-blue-900/20 rounded">
-                        <p class="text-sm text-gray-400">للمشروع</p>
-                        <p class="font-bold">${payment.project} TON</p>
-                    </div>
-                    <div class="p-2 bg-green-900/20 rounded">
-                        <p class="text-sm text-gray-400">للمحيل</p>
-                        <p class="font-bold">${payment.upline} TON</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-}
-
-// التهيئة
-window.onload = function() {
-    updatePaymentHistory();
-    
-    // إضافة بعض المدفوعات التجريبية
-    paymentHistory = [
-        {
-            id: 1001,
-            amount: 10,
-            date: new Date().toLocaleString(),
-            project: "5.00",
-            upline: "5.00",
-            status: "مكتمل"
-        },
-        {
-            id: 1002,
-            amount: 5,
-            date: new Date(Date.now() - 86400000).toLocaleString(),
-            project: "2.50",
-            upline: "2.50",
-            status: "مكتمل"
-        }
-    ];
-    
-    updatePaymentHistory();
-};
-</script>
 </body>
 </html>
