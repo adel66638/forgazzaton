@@ -1,746 +1,283 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE | نظام التسويق</title>
+    <title>FF FORTONE Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #0a0e17; color: white; font-family: 'Cairo', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .btn-primary { background: linear-gradient(135deg, #007bff, #6610f2); }
-        .btn-success { background: linear-gradient(135deg, #28a745, #20c997); }
-        .level-card { transition: all 0.3s ease; }
-        .level-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0, 123, 255, 0.3); }
+        body { background: #0f172a; color: white; }
+        .sidebar { background: #1e293b; }
+        .card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(100, 116, 139, 0.2); }
+        .btn-primary { background: #3b82f6; }
+        .btn-success { background: #10b981; }
+        .btn-purple { background: #8b5cf6; }
     </style>
 </head>
-<body class="min-h-screen">
-
-    <!-- Loading Screen -->
-    <div id="loading" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-        <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <h2 class="text-2xl font-bold text-blue-400 mb-2">FF FORTONE</h2>
-        <p class="text-gray-400">جاري التحميل...</p>
+<body class="flex">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 min-h-screen p-4">
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold">FF <span class="text-blue-500">FORTONE</span></h1>
+            <p class="text-gray-400 text-sm">Marketing Dashboard</p>
+        </div>
+        
+        <nav class="space-y-2">
+            <a href="#" class="flex items-center gap-3 p-3 bg-blue-500/20 rounded-lg">
+                <i class="fas fa-home text-blue-400"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg">
+                <i class="fas fa-users text-green-400"></i>
+                <span>My Team</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg">
+                <i class="fas fa-chart-line text-yellow-400"></i>
+                <span>Statistics</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg">
+                <i class="fas fa-wallet text-purple-400"></i>
+                <span>Wallet</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg">
+                <i class="fas fa-cog text-gray-400"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+        
+        <div class="mt-auto pt-8 border-t border-gray-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-blue-400"></i>
+                </div>
+                <div>
+                    <p class="font-bold">User #305562</p>
+                    <p class="text-gray-400 text-sm">Level 3</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Main Content -->
-    <div id="main-content" class="hidden">
+    <div class="flex-1 p-6">
         <!-- Header -->
-        <header class="container mx-auto px-4 py-6">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl md:text-4xl font-black">
-                        <span class="text-white">FF</span>
-                        <span class="text-blue-500">FORTONE</span>
-                    </h1>
-                    <p class="text-gray-400 text-sm">نظام التسويق المتطور</p>
-                </div>
-                <div id="ton-connect-btn" class="scale-90"></div>
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold">Dashboard</h2>
+                <p class="text-gray-400">Welcome back, #305562</p>
             </div>
-        </header>
+            <button class="btn-primary px-6 py-2 rounded-lg font-bold">
+                <i class="fas fa-wallet mr-2"></i> Connect Wallet
+            </button>
+        </div>
 
         <!-- Stats Cards -->
-        <div class="container mx-auto px-4 mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <!-- User Card -->
-                <div class="glass rounded-2xl p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-user text-blue-400 text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-gray-400 text-sm">رقم العضوية</p>
-                            <p id="user-id" class="text-2xl font-bold">----</p>
-                        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <!-- Total Earnings -->
+            <div class="card rounded-xl p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Total Earnings</p>
+                        <p class="text-2xl font-bold text-green-400">125.5 TON</p>
                     </div>
-                    <div class="border-t border-gray-800 pt-4">
-                        <p class="text-gray-400 text-sm mb-1">المحيل الأعلى</p>
-                        <p id="upline-id" class="text-lg text-blue-400">----</p>
+                    <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-coins text-green-400 text-xl"></i>
                     </div>
                 </div>
+            </div>
 
-                <!-- Team Card -->
-                <div class="glass rounded-2xl p-6 cursor-pointer" onclick="showTeam()">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-users text-green-400 text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-gray-400 text-sm">الفريق (مباشر / غير مباشر)</p>
-                            <div class="flex items-baseline gap-2">
-                                <span id="direct-count" class="text-2xl font-bold text-green-500">0</span>
-                                <span class="text-gray-500">مباشر</span>
-                                <span class="text-gray-600">/</span>
-                                <span id="indirect-count" class="text-xl font-bold">0</span>
-                                <span class="text-gray-500">غير مباشر</span>
-                            </div>
-                        </div>
+            <!-- Direct Referrals -->
+            <div class="card rounded-xl p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Direct Referrals</p>
+                        <p class="text-2xl font-bold text-blue-400">8</p>
                     </div>
-                    <p class="text-blue-400 text-sm mt-2">
-                        <i class="fas fa-eye ml-1"></i> عرض محافظ الفريق
-                    </p>
+                    <div class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-plus text-blue-400 text-xl"></i>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Referral Card -->
-                <div class="glass rounded-2xl p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-link text-purple-400 text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-gray-400 text-sm">رابط الدعوة</p>
-                            <div class="flex gap-2 mt-2">
-                                <input type="text" id="ref-link" readonly 
-                                    class="flex-1 bg-gray-900 rounded-lg px-3 py-2 text-sm">
-                                <button onclick="copyRefLink()" class="bg-blue-600 hover:bg-blue-700 px-4 rounded-lg">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-                            </div>
-                        </div>
+            <!-- Team Size -->
+            <div class="card rounded-xl p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Team Size</p>
+                        <p class="text-2xl font-bold text-purple-400">42</p>
                     </div>
-                    <div class="bg-green-500/10 rounded-xl p-3 mt-3">
-                        <p class="text-green-400 text-sm font-bold">اكسب 50% عمولة</p>
-                        <p class="text-gray-400 text-xs">احصل على 50% من كل ترقية في فريقك</p>
+                    <div class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users text-purple-400 text-xl"></i>
                     </div>
                 </div>
+            </div>
+
+            <!-- Current Level -->
+            <div class="card rounded-xl p-5">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">Current Level</p>
+                        <p class="text-2xl font-bold text-yellow-400">Level 3</p>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-trophy text-yellow-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referral Link Card -->
+        <div class="card rounded-xl p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <i class="fas fa-share-alt text-blue-400"></i>
+                        Your Referral Link
+                    </h3>
+                    <p class="text-gray-400 text-sm">Share this link to invite new members</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg">
+                        <i class="fab fa-telegram mr-2"></i> Telegram
+                    </button>
+                    <button class="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg">
+                        <i class="fab fa-whatsapp mr-2"></i> WhatsApp
+                    </button>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <input type="text" value="https://fffortone.com/ref/305562" readonly 
+                       class="flex-1 bg-gray-900 rounded-lg px-4 py-3">
+                <button class="btn-primary px-6 rounded-lg">
+                    <i class="fas fa-copy mr-2"></i> Copy
+                </button>
+            </div>
+            <div class="mt-4 p-3 bg-green-500/10 rounded-lg">
+                <p class="text-green-400 font-bold">Earn 50% commission from every referral upgrade!</p>
             </div>
         </div>
 
         <!-- Marketing Grid -->
-        <div class="container mx-auto px-4 mb-12">
-            <h2 class="text-center text-2xl font-bold mb-2">شبكة التسويق</h2>
-            <p class="text-center text-gray-400 mb-8">20 مستوى للترقية والإنجاز</p>
-            
-            <div id="levels-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
-        </div>
-
-        <!-- Footer -->
-        <footer class="border-t border-gray-800 py-6 mt-8">
-            <div class="container mx-auto px-4 text-center">
-                <p class="text-gray-400 text-sm">© 2024 FF FORTONE. جميع الحقوق محفوظة</p>
-                <p class="text-gray-500 text-xs mt-1">مدعوم بـ TON Blockchain</p>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Payment Modal -->
-    <div id="payment-modal" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4">
-        <div class="glass rounded-2xl p-6 max-w-md w-full">
+        <div class="mb-8">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold">ترقية المستوى <span id="pay-level" class="text-blue-400">1</span></h3>
-                <button onclick="closePayment()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-            </div>
-            
-            <div class="space-y-4 mb-6">
-                <div class="bg-gray-900/50 rounded-xl p-4">
-                    <p class="text-gray-400 mb-1">المبلغ الإجمالي</p>
-                    <p id="pay-total" class="text-2xl font-bold text-blue-400">0 TON</p>
-                </div>
-                
-                <div class="flex justify-between items-center p-3 bg-blue-500/10 rounded-lg">
-                    <div>
-                        <p class="font-bold text-blue-400">للمشروع</p>
-                        <p class="text-sm text-gray-400">50% من المبلغ</p>
-                    </div>
-                    <span id="pay-project" class="text-xl font-bold">0 TON</span>
-                </div>
-                
-                <div class="flex justify-between items-center p-3 bg-green-500/10 rounded-lg">
-                    <div>
-                        <p class="font-bold text-green-400">للمحيل</p>
-                        <p id="pay-upline-info" class="text-sm text-gray-400">50% من المبلغ</p>
-                    </div>
-                    <span id="pay-upline" class="text-xl font-bold">0 TON</span>
+                <h3 class="text-xl font-bold">Marketing Grid - 20 Levels</h3>
+                <div class="text-gray-400">
+                    <span class="text-green-400 font-bold">3 Active</span> / 20 Levels
                 </div>
             </div>
             
-            <div class="flex gap-3">
-                <button onclick="closePayment()" class="flex-1 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold">
-                    إلغاء
-                </button>
-                <button onclick="executePayment()" class="flex-1 py-3 btn-success rounded-xl font-bold">
-                    تأكيد الدفع
-                </button>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <!-- Level 1 -->
+                <div class="card rounded-xl p-4 text-center border-2 border-green-500/50">
+                    <p class="text-gray-400 text-sm">Level 1</p>
+                    <p class="text-xl font-bold my-2">1 TON</p>
+                    <button class="w-full py-2 bg-green-500/20 text-green-400 rounded-lg font-bold">
+                        <i class="fas fa-check mr-2"></i> Active
+                    </button>
+                </div>
+
+                <!-- Level 2 -->
+                <div class="card rounded-xl p-4 text-center border-2 border-green-500/50">
+                    <p class="text-gray-400 text-sm">Level 2</p>
+                    <p class="text-xl font-bold my-2">2 TON</p>
+                    <button class="w-full py-2 bg-green-500/20 text-green-400 rounded-lg font-bold">
+                        <i class="fas fa-check mr-2"></i> Active
+                    </button>
+                </div>
+
+                <!-- Level 3 -->
+                <div class="card rounded-xl p-4 text-center border-2 border-green-500/50">
+                    <p class="text-gray-400 text-sm">Level 3</p>
+                    <p class="text-xl font-bold my-2">3 TON</p>
+                    <button class="w-full py-2 bg-green-500/20 text-green-400 rounded-lg font-bold">
+                        <i class="fas fa-check mr-2"></i> Active
+                    </button>
+                </div>
+
+                <!-- Level 4 -->
+                <div class="card rounded-xl p-4 text-center">
+                    <p class="text-gray-400 text-sm">Level 4</p>
+                    <p class="text-xl font-bold my-2">4 TON</p>
+                    <button class="w-full py-2 btn-primary rounded-lg font-bold">
+                        <i class="fas fa-arrow-up mr-2"></i> Upgrade
+                    </button>
+                </div>
+
+                <!-- Level 5 -->
+                <div class="card rounded-xl p-4 text-center">
+                    <p class="text-gray-400 text-sm">Level 5</p>
+                    <p class="text-xl font-bold my-2">5 TON</p>
+                    <button class="w-full py-2 btn-primary rounded-lg font-bold">
+                        <i class="fas fa-arrow-up mr-2"></i> Upgrade
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Team Modal -->
-    <div id="team-modal" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4">
-        <div class="glass rounded-2xl p-6 max-w-md w-full">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold">محافظ فريقك</h3>
-                <button onclick="closeTeam()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+        <!-- Recent Activity -->
+        <div class="card rounded-xl p-6">
+            <h3 class="text-xl font-bold mb-4">Recent Activity</h3>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-plus text-green-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold">New Direct Referral</p>
+                            <p class="text-gray-400 text-sm">User #457812 joined your team</p>
+                        </div>
+                    </div>
+                    <span class="text-gray-400 text-sm">2 hours ago</span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-coins text-blue-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold">Commission Earned</p>
+                            <p class="text-gray-400 text-sm">+2.5 TON from referral upgrade</p>
+                        </div>
+                    </div>
+                    <span class="text-gray-400 text-sm">1 day ago</span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-trophy text-purple-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold">Level Upgraded</p>
+                            <p class="text-gray-400 text-sm">Upgraded to Level 3</p>
+                        </div>
+                    </div>
+                    <span class="text-gray-400 text-sm">3 days ago</span>
+                </div>
             </div>
-            <div id="team-list" class="max-h-[60vh] overflow-y-auto"></div>
         </div>
     </div>
 
     <script>
-        // ==================== CONFIGURATION ====================
-        // 🔥 Firebase Configuration - أضف معلوماتك هنا
-        const firebaseConfig = {
-            apiKey: "AIzaSyA4oGEMOmaraubqk8oSxxsoG65l4Z2vjNc",
-            authDomain: "ff-fortone.firebaseapp.com",
-            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
-            projectId: "ff-fortone",
-            storageBucket: "ff-fortone.appspot.com",
-            messagingSenderId: "890615410300",
-            appId: "1:890615410300:web:5659f9cdf762c68eac064d"
-        };
-
-        // System Configuration
-        const PROJECT_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx";
-        const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
+        // Simple functions
+        function copyLink() {
+            const link = "https://fffortone.com/ref/305562";
+            navigator.clipboard.writeText(link);
+            alert("Referral link copied!");
+        }
         
-        // User State
-        const userState = {
-            address: "",
-            id: "",
-            upline: "",
-            level: 1,
-            directRefs: 0,
-            indirectRefs: 0
-        };
-        
-        let pendingPayment = {
-            level: 0,
-            price: 0
-        };
-
-        // ==================== INITIALIZE ====================
-        async function initializeApp() {
-            try {
-                // Initialize Firebase
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                window.db = firebase.database();
-                console.log("✅ Firebase connected");
-                
-                // Initialize TON Connect
-                window.tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-                    manifestUrl: 'https://ff-fortone.vercel.app/tonconnect-manifest.json',
-                    buttonRootId: 'ton-connect-btn',
-                    uiPreferences: {
-                        theme: 'DARK',
-                        colorsSet: {
-                            tonConnect: '#007bff'
-                        }
-                    }
-                });
-                
-                // Listen to wallet changes
-                tonConnectUI.onStatusChange(handleWalletChange);
-                
-                // Check existing connection
-                const wallet = await tonConnectUI.connectionRestored;
-                if (wallet) {
-                    await handleWalletChange(wallet);
-                } else {
-                    showDisconnectedState();
-                }
-                
-                // Hide loading screen
-                setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('main-content').classList.remove('hidden');
-                }, 1000);
-                
-            } catch (error) {
-                console.error("Initialization error:", error);
-                showErrorState();
-            }
-        }
-
-        // ==================== WALLET HANDLING ====================
-        async function handleWalletChange(wallet) {
-            if (wallet) {
-                userState.address = wallet.account.address;
-                await loadUserData();
-            } else {
-                showDisconnectedState();
-            }
-        }
-
-        async function loadUserData() {
-            if (!db) {
-                console.log("No database connection");
-                showDemoData();
-                return;
-            }
-            
-            try {
-                const userRef = db.ref('users/' + userState.address);
-                
-                userRef.on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        // Existing user
-                        updateUserFromDB(data);
-                    } else {
-                        // New user - check for referral
-                        const refId = localStorage.getItem('referralId') || getUrlParam('ref');
-                        createNewUser(refId);
-                    }
-                });
-                
-            } catch (error) {
-                console.error("Error loading user:", error);
-                showDemoData();
-            }
-        }
-
-        function updateUserFromDB(data) {
-            userState.id = data.myId;
-            userState.upline = data.upline || "----";
-            userState.level = data.level || 1;
-            userState.directRefs = data.directRefs || 0;
-            userState.indirectRefs = data.indirectRefs || 0;
-            
-            updateUI();
-            updateReferralLink();
-        }
-
-        async function createNewUser(referralId) {
-            // Generate new user ID
-            const newId = generateUserId();
-            
-            userState.id = newId;
-            userState.upline = referralId || "----";
-            userState.level = 1;
-            
-            // Save to database
-            if (db) {
-                try {
-                    await db.ref('users/' + userState.address).set({
-                        myId: newId,
-                        upline: referralId || "",
-                        level: 1,
-                        directRefs: 0,
-                        indirectRefs: 0,
-                        joinedAt: Date.now(),
-                        wallet: userState.address
-                    });
-                    
-                    // If referred, update upline's stats
-                    if (referralId) {
-                        await updateUplineStats(referralId);
-                    }
-                } catch (error) {
-                    console.error("Error creating user:", error);
-                }
-            }
-            
-            updateUI();
-            updateReferralLink();
-        }
-
-        // ==================== UI FUNCTIONS ====================
-        function updateUI() {
-            document.getElementById('user-id').textContent = userState.id;
-            document.getElementById('upline-id').textContent = userState.upline;
-            document.getElementById('direct-count').textContent = userState.directRefs;
-            document.getElementById('indirect-count').textContent = userState.indirectRefs;
-            
-            renderLevels();
-        }
-
-        function updateReferralLink() {
-            const link = `${window.location.origin}${window.location.pathname}?ref=${userState.id}`;
-            document.getElementById('ref-link').value = link;
-        }
-
-        function renderLevels() {
-            const grid = document.getElementById('levels-grid');
-            grid.innerHTML = '';
-            
-            for (let i = 1; i <= 20; i++) {
-                const price = LEVEL_PRICES[i];
-                const isActive = i <= userState.level;
-                const isNext = i === userState.level + 1;
-                
-                grid.innerHTML += `
-                    <div class="level-card glass rounded-xl p-4 text-center ${isActive ? 'border-2 border-green-500/50' : ''}">
-                        <p class="text-gray-400 text-sm mb-1">المستوى ${i}</p>
-                        <p class="text-xl font-bold my-2">${price} TON</p>
-                        <button onclick="${isActive ? '' : `initiatePayment(${i}, ${price})`}"
-                            class="w-full py-2 rounded-lg font-bold transition-all
-                                   ${isActive ? 'bg-green-500/20 text-green-400' : 
-                                     isNext ? 'btn-primary hover:scale-105' : 'bg-blue-500/20 hover:bg-blue-500/30'}"
-                            ${isActive ? 'disabled' : ''}>
-                            ${isActive ? 'مفعل' : isNext ? 'ترقية الآن' : 'ترقية'}
-                        </button>
-                    </div>
-                `;
-            }
-        }
-
-        function showDisconnectedState() {
-            userState.id = "----";
-            userState.upline = "----";
-            userState.directRefs = 0;
-            userState.indirectRefs = 0;
-            
-            updateUI();
-            
-            // Show connect buttons
-            const grid = document.getElementById('levels-grid');
-            grid.innerHTML = '';
-            for (let i = 1; i <= 20; i++) {
-                const price = LEVEL_PRICES[i];
-                grid.innerHTML += `
-                    <div class="level-card glass rounded-xl p-4 text-center">
-                        <p class="text-gray-400 text-sm mb-1">المستوى ${i}</p>
-                        <p class="text-xl font-bold my-2">${price} TON</p>
-                        <button onclick="connectWallet()"
-                            class="w-full py-2 btn-primary rounded-lg font-bold hover:scale-105 transition-transform">
-                            ربط المحفظة
-                        </button>
-                    </div>
-                `;
-            }
-        }
-
-        function showDemoData() {
-            // For testing without database
-            userState.id = "305562";
-            userState.upline = "456123";
-            userState.level = 3;
-            userState.directRefs = 3;
-            userState.indirectRefs = 12;
-            
-            updateUI();
-            updateReferralLink();
-        }
-
-        function showErrorState() {
-            document.getElementById('loading').innerHTML = `
-                <div class="text-center">
-                    <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-                    <h2 class="text-xl font-bold mb-2">خطأ في التحميل</h2>
-                    <p class="text-gray-400 mb-4">يرجى تحديث الصفحة</p>
-                    <button onclick="location.reload()" class="px-6 py-2 bg-blue-600 rounded-lg">
-                        تحديث الصفحة
-                    </button>
-                </div>
-            `;
-        }
-
-        // ==================== PAYMENT SYSTEM ====================
-        function initiatePayment(level, price) {
-            if (!userState.address) {
-                alert("يرجى ربط محفظتك أولاً");
-                tonConnectUI.openModal();
-                return;
-            }
-            
-            pendingPayment.level = level;
-            pendingPayment.price = price;
-            
-            const halfPrice = (price / 2).toFixed(2);
-            
-            // Update payment modal
-            document.getElementById('pay-level').textContent = level;
-            document.getElementById('pay-total').textContent = price + " TON";
-            document.getElementById('pay-project').textContent = halfPrice + " TON";
-            
-            if (userState.upline && userState.upline !== "----") {
-                document.getElementById('pay-upline').textContent = halfPrice + " TON";
-                document.getElementById('pay-upline-info').textContent = `للمحيل: ${userState.upline}`;
-            } else {
-                document.getElementById('pay-upline').textContent = "0 TON";
-                document.getElementById('pay-upline-info').textContent = "لا يوجد محيل - 100% للمشروع";
-            }
-            
-            document.getElementById('payment-modal').classList.remove('hidden');
-        }
-
-        async function executePayment() {
-            try {
-                const amount = pendingPayment.price * 1000000000; // Convert to nanoTON
-                const halfAmount = Math.floor(amount / 2);
-                
-                // Prepare transaction messages
-                const messages = [];
-                
-                // Always send to project
-                messages.push({
-                    address: PROJECT_WALLET,
-                    amount: halfAmount.toString()
-                });
-                
-                // Try to send to upline if exists
-                let uplineWallet = null;
-                if (userState.upline && userState.upline !== "----") {
-                    uplineWallet = await findUplineWallet(userState.upline);
-                    if (uplineWallet) {
-                        messages.push({
-                            address: uplineWallet,
-                            amount: halfAmount.toString()
-                        });
-                    } else {
-                        // If no upline wallet found, send all to project
-                        messages[0].amount = amount.toString();
-                    }
-                } else {
-                    messages[0].amount = amount.toString();
-                }
-                
-                // Create transaction
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 300, // 5 minutes
-                    messages: messages
-                };
-                
-                // Send transaction
-                const result = await tonConnectUI.sendTransaction(transaction);
-                
-                if (result) {
-                    // Update user level
-                    userState.level = pendingPayment.level;
-                    
-                    // Update in database
-                    if (db) {
-                        await db.ref('users/' + userState.address).update({
-                            level: pendingPayment.level,
-                            lastUpgrade: Date.now()
-                        });
-                        
-                        // Record payment
-                        await db.ref('payments').push({
-                            userId: userState.id,
-                            level: pendingPayment.level,
-                            amount: pendingPayment.price,
-                            projectAmount: messages[0].amount / 1000000000,
-                            uplineAmount: uplineWallet ? halfAmount / 1000000000 : 0,
-                            uplineId: userState.upline,
-                            timestamp: Date.now(),
-                            txHash: result.boc
-                        });
-                    }
-                    
-                    closePayment();
-                    updateUI();
-                    
-                    // Show success message
-                    showNotification(
-                        `✅ تمت الترقية للمستوى ${pendingPayment.level} بنجاح!`,
-                        'success'
-                    );
-                }
-                
-            } catch (error) {
-                console.error("Payment error:", error);
-                showNotification("❌ فشل الدفع: " + error.message, 'error');
-            }
-        }
-
-        function closePayment() {
-            document.getElementById('payment-modal').classList.add('hidden');
-        }
-
-        // ==================== TEAM MANAGEMENT ====================
-        async function showTeam() {
-            if (!userState.address) {
-                alert("يرجى ربط المحفظة لعرض الفريق");
-                return;
-            }
-            
-            const container = document.getElementById('team-list');
-            container.innerHTML = `
-                <div class="text-center py-8">
-                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p class="text-gray-400">جاري تحميل بيانات الفريق...</p>
-                </div>
-            `;
-            
-            document.getElementById('team-modal').classList.remove('hidden');
-            
-            // Load team data
-            setTimeout(() => {
-                if (userState.directRefs > 0) {
-                    loadTeamData();
-                } else {
-                    container.innerHTML = `
-                        <div class="text-center py-8">
-                            <i class="fas fa-users text-gray-600 text-4xl mb-4"></i>
-                            <p class="text-gray-400 font-medium">لا يوجد أعضاء في فريقك</p>
-                            <p class="text-gray-500 text-sm mt-2">شارك رابط الدعوة لجلب أعضاء جدد</p>
-                        </div>
-                    `;
-                }
-            }, 1000);
-        }
-
-        async function loadTeamData() {
-            if (!db) return;
-            
-            try {
-                const snapshot = await db.ref('users')
-                    .orderByChild('upline')
-                    .equalTo(userState.id)
-                    .once('value');
-                
-                const container = document.getElementById('team-list');
-                if (snapshot.exists()) {
-                    let html = '';
-                    let index = 1;
-                    
-                    snapshot.forEach((child) => {
-                        const member = child.val();
-                        html += `
-                            <div class="bg-gray-900/50 rounded-xl p-4 mb-3">
-                                <div class="flex justify-between items-center mb-2">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                            <span class="text-sm font-bold">${index}</span>
-                                        </div>
-                                        <div>
-                                            <p class="font-bold">#${member.myId}</p>
-                                            <p class="text-sm text-gray-400">المستوى ${member.level || 1}</p>
-                                        </div>
-                                    </div>
-                                    <span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">نشط</span>
-                                </div>
-                                <div class="bg-black/30 rounded-lg p-3 mt-2">
-                                    <p class="text-xs text-gray-400 mb-1">عنوان المحفظة</p>
-                                    <p class="text-sm font-mono text-blue-300 break-all">${child.key.substring(0, 20)}...${child.key.substring(child.key.length - 10)}</p>
-                                </div>
-                            </div>
-                        `;
-                        index++;
-                    });
-                    
-                    container.innerHTML = html;
-                }
-            } catch (error) {
-                console.error("Error loading team:", error);
-            }
-        }
-
-        function closeTeam() {
-            document.getElementById('team-modal').classList.add('hidden');
-        }
-
-        // ==================== HELPER FUNCTIONS ====================
-        function generateUserId() {
-            return Math.floor(100000 + Math.random() * 900000).toString();
-        }
-
-        function getUrlParam(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
-
-        async function findUplineWallet(uplineId) {
-            if (!db) return null;
-            
-            try {
-                const snapshot = await db.ref('users')
-                    .orderByChild('myId')
-                    .equalTo(uplineId)
-                    .once('value');
-                
-                if (snapshot.exists()) {
-                    let wallet = null;
-                    snapshot.forEach((child) => {
-                        wallet = child.key;
-                    });
-                    return wallet;
-                }
-            } catch (error) {
-                console.error("Error finding upline:", error);
-            }
-            
-            return null;
-        }
-
-        async function updateUplineStats(uplineId) {
-            if (!db) return;
-            
-            try {
-                // Find upline
-                const snapshot = await db.ref('users')
-                    .orderByChild('myId')
-                    .equalTo(uplineId)
-                    .once('value');
-                
-                if (snapshot.exists()) {
-                    let uplineKey = null;
-                    snapshot.forEach((child) => {
-                        uplineKey = child.key;
-                    });
-                    
-                    if (uplineKey) {
-                        // Get current stats
-                        const uplineRef = db.ref('users/' + uplineKey);
-                        const uplineSnap = await uplineRef.once('value');
-                        const uplineData = uplineSnap.val();
-                        
-                        // Update direct refs count
-                        const newDirectRefs = (uplineData.directRefs || 0) + 1;
-                        await uplineRef.update({
-                            directRefs: newDirectRefs,
-                            lastRef: Date.now()
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error("Error updating upline stats:", error);
-            }
-        }
-
-        function copyRefLink() {
-            const input = document.getElementById('ref-link');
-            if (!input.value || input.value === "") {
-                alert("يرجى ربط المحفظة للحصول على رابط الدعوة");
-                return;
-            }
-            
-            input.select();
-            input.setSelectionRange(0, 99999);
-            
-            navigator.clipboard.writeText(input.value).then(() => {
-                showNotification("✅ تم نسخ رابط الدعوة", 'success');
-            }).catch(() => {
-                // Fallback for older browsers
-                document.execCommand('copy');
-                showNotification("✅ تم نسخ رابط الدعوة", 'success');
-            });
-        }
-
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ${
-                type === 'success' ? 'bg-green-500' : 
-                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-            }`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
-
         function connectWallet() {
-            tonConnectUI.openModal();
+            alert("Wallet connection modal would open here");
         }
-
-        // ==================== START APPLICATION ====================
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        
+        function upgradeLevel(level, price) {
+            if (confirm(`Upgrade to Level ${level} for ${price} TON?\n50% to project, 50% to upline`)) {
+                alert(`Level ${level} upgraded successfully!`);
+            }
+        }
     </script>
 </body>
 </html>
