@@ -235,4 +235,205 @@
         }
     </script>
 </body>
+</html>            
+            <p class="text-[9px] text-gray-600 uppercase font-bold tracking-widest">Connect your TON wallet to enter the dashboard</p>
+        </div>
+
+        <p class="mt-8 text-[10px] text-gray-700 font-bold uppercase tracking-widest">Powered by TON Blockchain & Firebase</p>
+    </div>
+
+    <script>
+        // --- 1. Firebase Config (نفس إعداداتك) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
+            authDomain: "ff-fortone.firebaseapp.com",
+            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
+            projectId: "ff-fortone",
+            storageBucket: "ff-fortone.appspot.com",
+            messagingSenderId: "890615410300",
+            appId: "1:890615410300:web:5659f9..."
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // --- 2. نظام الإحالة (Referral Logic) ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const refId = urlParams.get('ref');
+        if (refId) {
+            localStorage.setItem('pending_upline', refId);
+            document.getElementById('ref-status').innerText = "Invited by Partner #" + refId;
+            document.getElementById('ref-status').classList.replace('text-gray-400', 'text-green-500');
+        }
+
+        // --- 3. اتصال المحفظة والتسجيل ---
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-btn'
+        });
+
+        tonConnectUI.onStatusChange(async (wallet) => {
+            if (wallet) {
+                document.getElementById('loader').classList.remove('hidden');
+                const address = wallet.account.address;
+                await handleUserAuth(address);
+            }
+        });
+
+        async function handleUserAuth(address) {
+            try {
+                const userRef = database.ref('users/' + address);
+                const snap = await userRef.once('value');
+
+                if (!snap.exists()) {
+                    // تسجيل مستخدم جديد
+                    const newId = Math.floor(100000 + Math.random() * 899999);
+                    const upline = localStorage.getItem('pending_upline') || "555497"; // ID المحيل أو أنت كـ ROOT
+
+                    await userRef.set({
+                        myId: newId,
+                        upline: upline,
+                        level: 1,
+                        wallet: address,
+                        joinedAt: Date.now()
+                    });
+                    console.log("Registered New User with Upline: " + upline);
+                }
+                
+                // التوجه للوحة التحكم (dashboard.html)
+                window.location.href = 'dashboard.html'; 
+            } catch (error) {
+                console.error("Auth Error:", error);
+                alert("Login Failed. Please try again.");
+                document.getElementById('loader').classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl border-blue-500/20">
+            <div class="flex justify-between items-center mb-10">
+                <div class="text-left">
+                    <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">Entry Ticket</p>
+                    <p class="text-4xl font-black italic">1.00 <span class="text-blue-500 text-xl">TON</span></p>
+                </div>
+                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-14 h-14">
+            </div>
+
+            <button id="mainActionButton" onclick="handleMainAction()" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-sm uppercase italic tracking-widest transition-all shadow-[0_15px_30px_rgba(37,99,235,0.3)]">
+                <span id="buttonText">Connect Wallet</span>
+            </button>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. إعداد Firebase (معلوماتك الأصلية محفوظة) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
+            authDomain: "ff-fortone.firebaseapp.com",
+            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
+            projectId: "ff-fortone",
+            storageBucket: "ff-fortone.appspot.com",
+            messagingSenderId: "890615410300",
+            appId: "1:890615410300:web:5659f9..."
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // التقاط الإحالة من الرابط وحفظها مؤقتاً
+        const urlParams = new URLSearchParams(window.location.search);
+        const refFromUrl = urlParams.get('ref');
+        if (refFromUrl) sessionStorage.setItem('pending_upline', refFromUrl);
+
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-btn'
+        });
+
+        // مراقبة حالة المحفظة
+        tonConnectUI.onStatusChange(async wallet => {
+            const btnText = document.getElementById('buttonText');
+            if (wallet) {
+                const address = wallet.account.address;
+                const snap = await database.ref('users/' + address).get();
+                if (snap.exists() && snap.val().level > 0) {
+                    btnText.innerText = "Open Dashboard";
+                } else {
+                    btnText.innerText = "Pay 1 TON to Join";
+                }
+            } else {
+                btnText.innerText = "Connect Wallet";
+            }
+        });
+
+        async function handleMainAction() {
+            if (!tonConnectUI.connected) {
+                await tonConnectUI.openModal();
+                return;
+            }
+
+            const address = tonConnectUI.wallet.account.address;
+            const userRef = database.ref('users/' + address);
+            const userSnap = await userRef.get();
+
+            // إذا كان مسجلاً مسبقاً، يفتح الداشبورد
+            if (userSnap.exists() && userSnap.val().level > 0) {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            // معاملة الدفع (1 TON للانضمام)
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 360,
+                messages: [{
+                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
+                    amount: "1000000000" // 1 TON
+                }]
+            };
+
+            try {
+                const result = await tonConnectUI.sendTransaction(transaction);
+                if (result) {
+                    const pendingUplineId = sessionStorage.getItem('pending_upline') || "1000";
+                    
+                    // البحث عن عنوان محفظة الداعي (الأب)
+                    const uplineQuery = await database.ref('users').orderByChild('myId').equalTo(pendingUplineId).once('value');
+                    let uplineWallet = "";
+                    if (uplineQuery.exists()) {
+                        uplineWallet = Object.keys(uplineQuery.val())[0];
+                    }
+
+                    // 1. إنشاء حساب جديد للمشترك
+                    const newId = Math.floor(100000 + Math.random() * 900000).toString();
+                    await userRef.set({
+                        myId: newId,
+                        level: 1,
+                        upline: pendingUplineId,
+                        uplineAddress: uplineWallet,
+                        directReferrals: 0,
+                        indirectReferrals: 0
+                    });
+
+                    // 2. تحديث عدادات الأب والجد (تشغيل العدادات المباشرة وغير المباشرة)
+                    if (uplineWallet) {
+                        // زيادة العداد المباشر (Direct) للأب
+                        await database.ref('users/' + uplineWallet).child('directReferrals').transaction(c => (c || 0) + 1);
+                        
+                        // جلب بيانات الأب لمعرفة الجد
+                        const fatherSnap = await database.ref('users/' + uplineWallet).get();
+                        const grandWallet = fatherSnap.val()?.uplineAddress;
+                        
+                        if (grandWallet) {
+                            // زيادة العداد غير المباشر (Indirect) للجد
+                            await database.ref('users/' + grandWallet).child('indirectReferrals').transaction(c => (c || 0) + 1);
+                        }
+                    }
+
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (e) {
+                alert("Transaction canceled or failed. Please try again.");
+            }
+        }
+    </script>
+</body>
 </html>
