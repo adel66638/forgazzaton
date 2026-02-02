@@ -1,40 +1,168 @@
+
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE | Entry Portal</title>
+    <title>FF FORTONE FREE | Professional TON Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
-        .hero-gradient { background: radial-gradient(circle at center, rgba(37, 99, 235, 0.15) 0%, transparent 70%); }
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .glow-text { text-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        body { font-family: 'Inter', sans-serif; background-color: #010413; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .hero-gradient { background: radial-gradient(circle at center, #1e40af 0%, #010413 75%); }
+        .ton-3d { width: 80px; height: 80px; filter: drop-shadow(0 0 15px rgba(0, 152, 234, 0.6)); display: inline-block; vertical-align: middle; margin: 0 15px; }
     </style>
 </head>
-<body class="h-screen flex items-center justify-center hero-gradient">
+<body class="text-white overflow-x-hidden">
 
-    <div class="max-w-md w-full p-6 text-center">
-        <div class="mb-12">
-            <h1 class="text-5xl font-black italic uppercase tracking-tighter glow-text">FF <span class="text-blue-500">FORTONE</span></h1>
-            <p class="text-[10px] text-gray-500 uppercase tracking-[0.5em] mt-2 font-bold">Next-Gen Decentralized Network</p>
+    <div class="fixed inset-0 hero-gradient -z-10 opacity-60"></div>
+
+    <nav class="flex justify-between items-center p-6 max-w-7xl mx-auto">
+        <div class="text-2xl font-black text-white italic flex items-center tracking-tighter uppercase">
+            <span class="text-blue-500">FF</span> 
+            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-8 h-8 mx-2" alt="TON"> 
+            FORTONE
         </div>
+        <div id="ton-connect-btn"></div>
+    </nav>
 
-        <div class="glass-card p-10 rounded-[3rem] border-t-2 border-blue-600 relative overflow-hidden">
-            <div id="loader" class="hidden absolute inset-0 bg-black/80 z-10 flex items-center justify-center flex-col">
-                <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <p class="text-[10px] font-black mt-4 uppercase tracking-widest text-blue-400">Syncing Blockchain...</p>
+    <main class="flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
+        <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tighter uppercase italic">
+            FF <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="ton-3d animate-pulse"> FORTONE
+        </h1>
+
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl border-blue-500/20">
+            <div class="flex justify-between items-center mb-10">
+                <div class="text-left">
+                    <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">Entry Ticket</p>
+                    <p class="text-4xl font-black italic">1.00 <span class="text-blue-500 text-xl">TON</span></p>
+                </div>
+                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-14 h-14">
             </div>
 
-            <h2 class="text-xl font-black italic uppercase mb-2">Welcome Partner</h2>
-            <p id="ref-status" class="text-[10px] text-gray-400 uppercase font-bold mb-8 italic">Direct Entry (No Upline)</p>
-            
-            <div class="flex justify-center mb-6" id="ton-connect-btn"></div>
-            
+            <button id="mainActionButton" onclick="handleMainAction()" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-sm uppercase italic tracking-widest transition-all shadow-[0_15px_30px_rgba(37,99,235,0.3)]">
+                <span id="buttonText">Connect Wallet</span>
+            </button>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. إعداد Firebase (معلوماتك الأصلية محفوظة) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
+            authDomain: "ff-fortone.firebaseapp.com",
+            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
+            projectId: "ff-fortone",
+            storageBucket: "ff-fortone.appspot.com",
+            messagingSenderId: "890615410300",
+            appId: "1:890615410300:web:5659f9..."
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // التقاط الإحالة من الرابط وحفظها مؤقتاً
+        const urlParams = new URLSearchParams(window.location.search);
+        const refFromUrl = urlParams.get('ref');
+        if (refFromUrl) sessionStorage.setItem('pending_upline', refFromUrl);
+
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-btn'
+        });
+
+        // مراقبة حالة المحفظة
+        tonConnectUI.onStatusChange(async wallet => {
+            const btnText = document.getElementById('buttonText');
+            if (wallet) {
+                const address = wallet.account.address;
+                const snap = await database.ref('users/' + address).get();
+                if (snap.exists() && snap.val().level > 0) {
+                    btnText.innerText = "Open Dashboard";
+                } else {
+                    btnText.innerText = "Pay 1 TON to Join";
+                }
+            } else {
+                btnText.innerText = "Connect Wallet";
+            }
+        });
+
+        async function handleMainAction() {
+            if (!tonConnectUI.connected) {
+                await tonConnectUI.openModal();
+                return;
+            }
+
+            const address = tonConnectUI.wallet.account.address;
+            const userRef = database.ref('users/' + address);
+            const userSnap = await userRef.get();
+
+            // إذا كان مسجلاً مسبقاً، يفتح الداشبورد
+            if (userSnap.exists() && userSnap.val().level > 0) {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            // معاملة الدفع (1 TON للانضمام)
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 360,
+                messages: [{
+                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
+                    amount: "1000000000" // 1 TON
+                }]
+            };
+
+            try {
+                const result = await tonConnectUI.sendTransaction(transaction);
+                if (result) {
+                    const pendingUplineId = sessionStorage.getItem('pending_upline') || "1000";
+                    
+                    // البحث عن عنوان محفظة الداعي (الأب)
+                    const uplineQuery = await database.ref('users').orderByChild('myId').equalTo(pendingUplineId).once('value');
+                    let uplineWallet = "";
+                    if (uplineQuery.exists()) {
+                        uplineWallet = Object.keys(uplineQuery.val())[0];
+                    }
+
+                    // 1. إنشاء حساب جديد للمشترك
+                    const newId = Math.floor(100000 + Math.random() * 900000).toString();
+                    await userRef.set({
+                        myId: newId,
+                        level: 1,
+                        upline: pendingUplineId,
+                        uplineAddress: uplineWallet,
+                        directReferrals: 0,
+                        indirectReferrals: 0
+                    });
+
+                    // 2. تحديث عدادات الأب والجد (تشغيل العدادات المباشرة وغير المباشرة)
+                    if (uplineWallet) {
+                        // زيادة العداد المباشر (Direct) للأب
+                        await database.ref('users/' + uplineWallet).child('directReferrals').transaction(c => (c || 0) + 1);
+                        
+                        // جلب بيانات الأب لمعرفة الجد
+                        const fatherSnap = await database.ref('users/' + uplineWallet).get();
+                        const grandWallet = fatherSnap.val()?.uplineAddress;
+                        
+                        if (grandWallet) {
+                            // زيادة العداد غير المباشر (Indirect) للجد
+                            await database.ref('users/' + grandWallet).child('indirectReferrals').transaction(c => (c || 0) + 1);
+                        }
+                    }
+
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (e) {
+                alert("Transaction canceled or failed. Please try again.");
+            }
+        }
+    </script>
+</body>
+</html>            
             <p class="text-[9px] text-gray-600 uppercase font-bold tracking-widest">Connect your TON wallet to enter the dashboard</p>
         </div>
 
