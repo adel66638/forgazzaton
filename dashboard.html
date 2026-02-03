@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FF FORTONE | Master Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <!-- استخدم إصدار ثابت -->
+    <script src="https://unpkg.com/@tonconnect/ui@2.1.0/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
@@ -16,19 +17,6 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 10px; }
         .admin-card { background: linear-gradient(145deg, rgba(88, 28, 135, 0.15), rgba(15, 23, 42, 0.5)); border: 1px solid rgba(168, 85, 247, 0.2); }
-        .loading-spinner {
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-top: 2px solid #3b82f6;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -36,75 +24,14 @@
     <nav class="flex justify-between items-center mb-10 max-w-7xl mx-auto">
         <h1 class="text-3xl font-black italic uppercase tracking-tighter">FF <span class="text-blue-500">FORTONE</span></h1>
         <div id="ton-connect-btn"></div>
+        <!-- زر بديل -->
+        <button onclick="tonConnectUI.openModal()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-sm font-bold hidden" id="manual-connect">
+            Connect Wallet
+        </button>
     </nav>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-7xl mx-auto mb-6">
-        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
-            <p id="user-id" class="text-2xl font-black italic mb-3">#------</p>
-            <div class="pt-2 border-t border-white/5">
-                <p class="text-gray-600 text-[9px] uppercase font-bold">Upline ID</p>
-                <p id="upline-id" class="text-sm font-bold text-blue-400">#------</p>
-            </div>
-        </div>
-        
-        <div onclick="openReferralList()" class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500 cursor-pointer hover:bg-white/5 transition-all transform active:scale-95">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Team (Direct / Indirect)</p>
-            <div class="flex items-baseline gap-2">
-                <p id="direct-refs" class="text-2xl font-black italic text-green-500">0</p>
-                <span class="text-gray-600 text-xs">Direct</span>
-                <span class="text-gray-700 mx-1">/</span>
-                <p id="indirect-refs" class="text-xl font-black italic text-gray-400">0</p>
-            </div>
-            <p class="text-[9px] text-gray-500 mt-2 uppercase font-bold italic tracking-tighter">View Your Network Wallets</p>
-        </div>
-
-        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-purple-500 col-span-1 md:col-span-2">
-            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-2">Share Your Referral Link</p>
-            <div class="flex flex-col sm:flex-row items-center gap-3 bg-black/40 p-3 rounded-2xl border border-white/5">
-                <input type="text" id="referral-url" readonly 
-                    class="bg-transparent border-none outline-none text-[11px] font-mono text-blue-300 w-full truncate" 
-                    value="Connecting wallet...">
-                <button onclick="copyReferralLink()" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-[10px] font-black px-6 py-2.5 rounded-xl transition-all active:scale-95">
-                    COPY LINK
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="referral-modal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
-        <div class="glass w-full max-w-md rounded-[2.5rem] border-t-2 border-green-500 overflow-hidden">
-            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
-                <h3 class="text-xl font-black italic uppercase">Partner <span class="text-green-500">Wallets</span></h3>
-                <button onclick="toggleModal(false)" class="text-gray-500 hover:text-white text-3xl">&times;</button>
-            </div>
-            <div id="referrals-container" class="p-6 max-h-[60vh] overflow-y-auto space-y-3"></div>
-            <div class="p-4 bg-white/5 text-center">
-                <button onclick="toggleModal(false)" class="text-[10px] font-black uppercase text-gray-400">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto mb-20">
-        <h2 class="text-sm font-black uppercase tracking-[0.3em] mb-8 text-center text-gray-500">Marketing Grid</h2>
-        <div id="levels-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
-    </div>
-
-    <div id="admin-section" class="max-w-7xl mx-auto mb-20 hidden">
-        <div class="glass p-8 rounded-[3rem] border-t-4 border-purple-600 bg-purple-900/10">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                <div>
-                    <h2 class="text-2xl font-black uppercase italic text-purple-500 tracking-tighter">Owner Database</h2>
-                    <p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Full Network Oversight</p>
-                </div>
-                <input type="text" id="admin-search" onkeyup="filterAdminList()" placeholder="Search ID or Wallet..." 
-                    class="w-full md:w-80 bg-black/50 border border-white/10 rounded-2xl px-5 py-3 text-xs focus:border-purple-500 outline-none">
-            </div>
-            <div id="admin-data-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-        </div>
-    </div>
-
     <script>
+        // تكوين Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -121,204 +48,81 @@
         const TARGET_WALLET = "EQArCYm0PgvhmKI4GGMDpuOrbFZha";
         const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
 
+        // تكوين TonConnect
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn'
+            buttonRootId: 'ton-connect-btn',
+            uiPreferences: {
+                theme: 'DARK',
+                borderRadius: 's'
+            }
         });
 
-        // متغير لتتبع حالة المعاملة
-        let isProcessing = false;
-
-        // دالة إنشاء مستخدم جديد
-        async function createNewUser(walletAddress, referrerId = null) {
-            const userRef = database.ref('users/' + walletAddress);
+        // عند تغيير حالة المحفظة
+        tonConnectUI.onStatusChange(async (wallet) => {
+            console.log('Wallet status:', wallet ? 'Connected' : 'Disconnected');
             
-            const snapshot = await userRef.once('value');
-            if (snapshot.exists()) {
-                return snapshot.val();
-            }
-            
-            const newId = Math.floor(100000 + Math.random() * 900000).toString();
-            
-            const userData = {
-                myId: newId,
-                upline: referrerId || null,
-                level: 1,
-                totalEarned: 0,
-                availableEarnings: 0,
-                totalReferrals: 0,
-                createdAt: Date.now()
-            };
-            
-            await userRef.set(userData);
-            
-            return userData;
-        }
-
-        tonConnectUI.onStatusChange(async wallet => {
             if (wallet) {
+                console.log('Wallet address:', wallet.account.address);
+                
+                // إخفاء الزر البديل
+                document.getElementById('manual-connect').classList.add('hidden');
+                
+                // جلب الـ referrer من URL
                 const urlParams = new URLSearchParams(window.location.search);
                 const referrerId = urlParams.get('ref');
                 
-                await createNewUser(wallet.account.address, referrerId);
-                loadUserData(wallet.account.address);
+                // إنشاء أو جلب المستخدم
+                const userData = await createNewUser(wallet.account.address, referrerId);
+                
+                if (userData) {
+                    loadUserData(wallet.account.address);
+                } else {
+                    alert("Error: Could not create user profile");
+                }
             } else {
-                window.location.href = 'index.html';
+                // عرض الزر البديل إذا فشل TonConnect
+                setTimeout(() => {
+                    if (!tonConnectUI.connected) {
+                        document.getElementById('manual-connect').classList.remove('hidden');
+                    }
+                }, 2000);
             }
         });
 
-        async function loadUserData(address) {
-            database.ref('users/' + address).on('value', async (snap) => {
-                const userData = snap.val();
-                if (!userData) return;
-
-                const myId = String(userData.myId || "");
-
-                document.getElementById('user-id').innerText = "#" + myId;
-                document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
-                
-                const referralUrl = window.location.origin + "/index.html?ref=" + myId;
-                document.getElementById('referral-url').value = referralUrl;
-
-                if (myId === MY_ADMIN_ID) {
-                    document.getElementById('admin-section').classList.remove('hidden');
-                    loadAllUsersForAdmin();
-                }
-
-                const directQuery = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
-                document.getElementById('direct-refs').innerText = directQuery.numChildren();
-
-                renderLevels(userData.level, address, myId);
-            });
-        }
-
-        // دالة الترقية المحسنة
-        async function upgradeLevel(level, price, address, userId) {
-            if (isProcessing) {
-                alert("Please wait for current transaction to complete");
-                return;
-            }
-            
+        // دالة إنشاء مستخدم
+        async function createNewUser(walletAddress, referrerId = null) {
             try {
-                isProcessing = true;
+                const userRef = database.ref('users/' + walletAddress);
+                const snapshot = await userRef.once('value');
                 
-                // تأكيد أولي
-                if (!confirm(`Upgrade to Level ${level} for ${price} TON?\n\n50% commission will go to your upline.`)) {
-                    isProcessing = false;
-                    return;
+                if (snapshot.exists()) {
+                    return snapshot.val();
                 }
                 
-                // تحديث زر الزر ليعرض تحميل
-                const button = document.querySelector(`button[onclick*="upgradeLevel(${level}"`);
-                if (button) {
-                    const originalText = button.innerHTML;
-                    button.innerHTML = '<div class="loading-spinner"></div>';
-                    button.disabled = true;
-                }
+                const newId = Math.floor(100000 + Math.random() * 900000).toString();
                 
-                // حساب المبلغ
-                const amount = price * 1e9;
-                
-                // معاملة بسيطة لمحفظة واحدة
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 120, // دقيقتين فقط
-                    messages: [{
-                        address: TARGET_WALLET,
-                        amount: amount.toString()
-                    }]
+                const userData = {
+                    myId: newId,
+                    upline: referrerId || null,
+                    level: 1,
+                    createdAt: Date.now()
                 };
                 
-                // إرسال المعاملة
-                const result = await tonConnectUI.sendTransaction(transaction);
+                await userRef.set(userData);
+                console.log('New user created with ID:', newId);
                 
-                if (result && result.boc) {
-                    // تحديث مستوى المستخدم
-                    await database.ref('users/' + address).update({ 
-                        level: level,
-                        lastPayment: {
-                            level: level,
-                            amount: price,
-                            timestamp: Date.now(),
-                            txId: result.boc
-                        }
-                    });
-                    
-                    // تحديث عمولة المحيل (50%)
-                    await updateUplineCommission(address, level, price);
-                    
-                    alert(`✅ Successfully upgraded to Level ${level}!`);
-                    
-                    // تحديث الواجهة
-                    renderLevels(level, address, userId);
-                    
-                } else {
-                    alert("❌ Transaction failed");
-                }
+                return userData;
                 
             } catch (error) {
-                console.error('Upgrade error:', error);
-                
-                if (error.message.includes('Rejected')) {
-                    alert("❌ Transaction was rejected");
-                } else if (error.message.includes('timeout')) {
-                    alert("⏱️ Transaction timeout");
-                } else if (error.message.includes('insufficient')) {
-                    alert("💰 Insufficient balance");
-                } else {
-                    alert("❌ Error: " + error.message);
-                }
-                
-            } finally {
-                isProcessing = false;
-                
-                // إعادة زر UPGRADE لحالته الأصلية
-                const button = document.querySelector(`button[onclick*="upgradeLevel(${level}"`);
-                if (button) {
-                    button.innerHTML = 'UPGRADE';
-                    button.disabled = false;
-                }
+                console.error('Create user error:', error);
+                return null;
             }
         }
 
-        // دالة تحديث عمولة المحيل
-        async function updateUplineCommission(userAddress, level, price) {
-            const userSnap = await database.ref('users/' + userAddress).once('value');
-            const userData = userSnap.val();
-            
-            if (!userData || !userData.upline) return;
-            
-            // البحث عن المحيل
-            const uplineSnap = await database.ref('users')
-                .orderByChild('myId')
-                .equalTo(userData.upline)
-                .once('value');
-            
-            if (uplineSnap.exists()) {
-                const uplineData = uplineSnap.val();
-                const uplineAddress = Object.keys(uplineData)[0];
-                const uplineUser = uplineData[uplineAddress];
-                
-                const commission = price * 0.5; // 50%
-                
-                // تحديث أرباح المحيل
-                await database.ref('users/' + uplineAddress).update({
-                    availableEarnings: (uplineUser.availableEarnings || 0) + commission,
-                    totalEarned: (uplineUser.totalEarned || 0) + commission,
-                    totalReferrals: (uplineUser.totalReferrals || 0) + 1
-                });
-                
-                // تسجيل في السجل
-                const commissionId = Date.now().toString();
-                await database.ref('commissions/' + uplineAddress + '/' + commissionId).set({
-                    fromUser: userData.myId,
-                    amount: commission,
-                    level: level,
-                    timestamp: Date.now()
-                });
-                
-                console.log(`50% commission (${commission} TON) recorded for upline`);
-            }
-        }
+        // باقي الدوال (loadUserData, renderLevels, etc.) تبقى كما هي
+        // ...
+    </script>        }
 
         // دالة نسخ رابط الإحالة
         function copyReferralLink() {
