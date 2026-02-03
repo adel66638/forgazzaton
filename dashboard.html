@@ -16,6 +16,7 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 10px; }
         .admin-card { background: linear-gradient(145deg, rgba(88, 28, 135, 0.15), rgba(15, 23, 42, 0.5)); border: 1px solid rgba(168, 85, 247, 0.2); }
+        .profit-badge { background: linear-gradient(90deg, #f59e0b, #d97706); color: white; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -30,8 +31,16 @@
             <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
             <p id="user-id" class="text-2xl font-black italic mb-3">#------</p>
             <div class="pt-2 border-t border-white/5">
-                <p class="text-gray-600 text-[9px] uppercase font-bold">Upline ID</p>
-                <p id="upline-id" class="text-sm font-bold text-blue-400">#------</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600 text-[9px] uppercase font-bold">Upline ID</p>
+                        <p id="upline-id" class="text-sm font-bold text-blue-400">#------</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-[9px] uppercase font-bold">Earned</p>
+                        <p id="total-earned" class="text-sm font-bold text-green-400">0 TON</p>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -56,6 +65,54 @@
                     COPY LINK
                 </button>
             </div>
+            <div class="mt-4 p-3 bg-green-900/20 rounded-xl border border-green-500/20">
+                <p class="text-[9px] font-black uppercase text-green-400 mb-1">50/50 Profit System</p>
+                <p class="text-[8px] text-gray-400">You earn <span class="text-green-300 font-bold">50%</span> from every referral payment</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- إضافة قسم الأرباح -->
+    <div class="max-w-7xl mx-auto mb-8">
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-yellow-500">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-black uppercase tracking-[0.3em] text-gray-500">Your Earnings</h3>
+                <span class="profit-badge text-[8px] px-3 py-1 rounded-full font-black">50% COMMISSION</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white/5 p-4 rounded-2xl text-center">
+                    <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Total Earned</p>
+                    <p id="total-earnings" class="text-xl font-black text-green-400">0 TON</p>
+                </div>
+                <div class="bg-white/5 p-4 rounded-2xl text-center">
+                    <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Available</p>
+                    <p id="available-earnings" class="text-xl font-black text-blue-400">0 TON</p>
+                    <button onclick="withdrawEarnings()" class="mt-2 w-full bg-blue-600 hover:bg-blue-500 text-[8px] font-black py-2 rounded-xl">
+                        WITHDRAW
+                    </button>
+                </div>
+                <div class="bg-white/5 p-4 rounded-2xl text-center">
+                    <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Last Payment</p>
+                    <p id="last-payment" class="text-sm font-black text-purple-400">0 TON</p>
+                    <p class="text-[7px] text-gray-500 mt-1" id="last-payment-date">--/--/----</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal الأرباح -->
+    <div id="earnings-modal" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
+        <div class="glass w-full max-w-md rounded-[2.5rem] border-t-2 border-yellow-500 overflow-hidden">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <h3 class="text-xl font-black italic uppercase">Earnings <span class="text-yellow-500">History</span></h3>
+                <button onclick="toggleEarningsModal(false)" class="text-gray-500 hover:text-white text-3xl">&times;</button>
+            </div>
+            <div id="earnings-history" class="p-6 max-h-[60vh] overflow-y-auto space-y-3">
+                <div class="text-center py-8">
+                    <p class="text-gray-600 text-sm">No earnings yet</p>
+                    <p class="text-gray-500 text-[10px] mt-2">Earn 50% from each referral payment</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -77,20 +134,6 @@
         <div id="levels-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
     </div>
 
-    <div id="admin-section" class="max-w-7xl mx-auto mb-20 hidden">
-        <div class="glass p-8 rounded-[3rem] border-t-4 border-purple-600 bg-purple-900/10">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                <div>
-                    <h2 class="text-2xl font-black uppercase italic text-purple-500 tracking-tighter">Owner Database</h2>
-                    <p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Full Network Oversight</p>
-                </div>
-                <input type="text" id="admin-search" onkeyup="filterAdminList()" placeholder="Search ID or Wallet..." 
-                    class="w-full md:w-80 bg-black/50 border border-white/10 rounded-2xl px-5 py-3 text-xs focus:border-purple-500 outline-none">
-            </div>
-            <div id="admin-data-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-        </div>
-    </div>
-
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
@@ -106,16 +149,102 @@
 
         const MY_ADMIN_ID = "555497"; 
         const TARGET_WALLET = "EQArCYm0PgvhmKI4GGMDpuOrbFZha";
+        const PROJECT_WALLET = TARGET_WALLET; // 50% للمشروع
         const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
+        const COMMISSION_RATE = 0.5; // 50%
 
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-btn'
         });
 
-        tonConnectUI.onStatusChange(wallet => {
-            if (wallet) { loadUserData(wallet.account.address); }
-            else { window.location.href = 'index.html'; }
+        // دالة لإنشاء مستخدم جديد مع نظام 50/50
+        async function createNewUser(walletAddress, referrerId = null) {
+            const userRef = database.ref('users/' + walletAddress);
+            
+            // تحقق إذا المستخدم موجود
+            const snapshot = await userRef.once('value');
+            if (snapshot.exists()) {
+                return snapshot.val();
+            }
+            
+            // إنشاء ID جديد
+            const newId = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            // بيانات المستخدم الجديد
+            const userData = {
+                myId: newId,
+                upline: referrerId || null,
+                level: 1,
+                totalEarned: 0,
+                availableEarnings: 0,
+                totalReferrals: 0,
+                createdAt: Date.now(),
+                earningsHistory: {}
+            };
+            
+            await userRef.set(userData);
+            
+            // إذا كان هناك محيل، تحديث أرباحه
+            if (referrerId) {
+                await updateUplineEarnings(referrerId, 1, 0.5); // 0.5 TON للمستوى الأول
+            }
+            
+            return userData;
+        }
+
+        // دالة لتحديث أرباح المحيل
+        async function updateUplineEarnings(uplineId, level, price) {
+            // البحث عن المحيل بواسطة ID
+            const uplineSnapshot = await database.ref('users')
+                .orderByChild('myId')
+                .equalTo(uplineId)
+                .once('value');
+            
+            if (uplineSnapshot.exists()) {
+                const uplineData = uplineSnapshot.val();
+                const uplineAddress = Object.keys(uplineData)[0];
+                const uplineUser = uplineData[uplineAddress];
+                
+                // حساب العمولة (50%)
+                const commission = price * COMMISSION_RATE;
+                
+                // تحديث أرباح المحيل
+                await database.ref('users/' + uplineAddress).update({
+                    totalEarned: (uplineUser.totalEarned || 0) + commission,
+                    availableEarnings: (uplineUser.availableEarnings || 0) + commission,
+                    totalReferrals: (uplineUser.totalReferrals || 0) + 1
+                });
+                
+                // إضافة للسجل
+                const paymentId = Date.now().toString();
+                await database.ref('earnings_history/' + uplineAddress + '/' + paymentId).set({
+                    amount: commission,
+                    fromLevel: level,
+                    fromPrice: price,
+                    timestamp: Date.now(),
+                    fromUserId: uplineId,
+                    type: 'referral_commission'
+                });
+                
+                console.log(`Commission ${commission} TON sent to upline ${uplineId}`);
+            }
+        }
+
+        tonConnectUI.onStatusChange(async wallet => {
+            if (wallet) {
+                // جلب الـ referrer من URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const referrerId = urlParams.get('ref');
+                
+                // إنشاء أو جلب المستخدم
+                await createNewUser(wallet.account.address, referrerId);
+                
+                // تحميل البيانات
+                loadUserData(wallet.account.address);
+            } else {
+                window.location.href = 'index.html';
+            }
         });
 
         async function loadUserData(address) {
@@ -125,9 +254,19 @@
 
                 const myId = String(userData.myId || "");
 
-                // تحديث واجهة المستخدم ورابط الإحالة
+                // تحديث واجهة المستخدم
                 document.getElementById('user-id').innerText = "#" + myId;
                 document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
+                document.getElementById('total-earned').innerText = (userData.totalEarned || 0) + " TON";
+                document.getElementById('total-earnings').innerText = (userData.totalEarned || 0) + " TON";
+                document.getElementById('available-earnings').innerText = (userData.availableEarnings || 0) + " TON";
+                
+                // تحديث آخر دفعة
+                if (userData.lastPayment) {
+                    document.getElementById('last-payment').innerText = userData.lastPayment.amount + " TON";
+                    document.getElementById('last-payment-date').innerText = 
+                        new Date(userData.lastPayment.timestamp).toLocaleDateString();
+                }
                 
                 // توليد رابط الإحالة تلقائياً
                 const referralUrl = window.location.origin + "/index.html?ref=" + myId;
@@ -138,11 +277,145 @@
                     loadAllUsersForAdmin();
                 }
 
+                // حساب referrals المباشرين
                 const directQuery = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
                 document.getElementById('direct-refs').innerText = directQuery.numChildren();
 
-                renderLevels(userData.level, address);
+                // حساب referrals غير المباشرين (مستوى ثاني)
+                let indirectCount = 0;
+                directQuery.forEach(directRef => {
+                    indirectCount += directRef.val().totalReferrals || 0;
+                });
+                document.getElementById('indirect-refs').innerText = indirectCount;
+
+                renderLevels(userData.level, address, myId);
             });
+        }
+
+        // دالة الترقية بنظام 50/50
+        async function upgradeLevel(level, price, address, userId) {
+            try {
+                // السعر الكامل
+                const fullAmount = LEVEL_PRICES[level] * 1e9;
+                
+                // 50% للمشروع
+                const projectAmount = Math.floor(fullAmount * 0.5);
+                
+                // 50% للمحيل (إذا موجود)
+                let uplineAmount = 0;
+                let uplineAddress = null;
+                
+                // البحث عن المحيل
+                const userSnapshot = await database.ref('users/' + address).once('value');
+                const userData = userSnapshot.val();
+                
+                if (userData && userData.upline) {
+                    const uplineSnapshot = await database.ref('users')
+                        .orderByChild('myId')
+                        .equalTo(userData.upline)
+                        .once('value');
+                    
+                    if (uplineSnapshot.exists()) {
+                        const uplineData = uplineSnapshot.val();
+                        uplineAddress = Object.keys(uplineData)[0];
+                        uplineAmount = Math.floor(fullAmount * 0.5);
+                    }
+                }
+                
+                // إنشاء معاملة متعددة المستقبلين
+                const messages = [
+                    {
+                        address: PROJECT_WALLET,
+                        amount: projectAmount.toString()
+                    }
+                ];
+                
+                // إذا كان هناك محيل، أضف له 50%
+                if (uplineAddress && uplineAmount > 0) {
+                    messages.push({
+                        address: uplineAddress,
+                        amount: uplineAmount.toString()
+                    });
+                }
+                
+                const transaction = {
+                    validUntil: Math.floor(Date.now()/1000) + 300,
+                    messages: messages
+                };
+                
+                // إرسال المعاملة
+                const result = await tonConnectUI.sendTransaction(transaction);
+                
+                if (result) {
+                    // تحديث مستوى المستخدم
+                    await database.ref('users/' + address).update({ level: level });
+                    
+                    // تحديث أرباح المحيل في قاعدة البيانات
+                    if (userData.upline) {
+                        await updateUplineEarnings(userData.upline, level, LEVEL_PRICES[level]);
+                    }
+                    
+                    alert("Level Up! 50% sent to your upline if exists.");
+                    loadUserData(address); // تحديث البيانات
+                }
+            } catch (e) {
+                console.error('Upgrade error:', e);
+                alert("Upgrade failed: " + e.message);
+            }
+        }
+
+        // دالة سحب الأرباح
+        async function withdrawEarnings() {
+            const address = tonConnectUI.account?.address;
+            if (!address) {
+                alert("Please connect wallet first");
+                return;
+            }
+            
+            const userSnapshot = await database.ref('users/' + address).once('value');
+            const userData = userSnapshot.val();
+            
+            const available = userData.availableEarnings || 0;
+            if (available <= 0) {
+                alert("No earnings available to withdraw");
+                return;
+            }
+            
+            if (!confirm(`Withdraw ${available} TON to your wallet?`)) {
+                return;
+            }
+            
+            try {
+                const amount = available * 1e9; // تحويل لـ nanoTON
+                
+                const transaction = {
+                    validUntil: Math.floor(Date.now()/1000) + 300,
+                    messages: [{
+                        address: address, // إرسال لنفسه
+                        amount: amount.toString()
+                    }]
+                };
+                
+                const result = await tonConnectUI.sendTransaction(transaction);
+                
+                if (result) {
+                    // تحديث الرصيد بعد السحب
+                    await database.ref('users/' + address).update({
+                        availableEarnings: 0,
+                        lastPayment: {
+                            amount: available,
+                            timestamp: Date.now(),
+                            transactionId: result.boc
+                        }
+                    });
+                    
+                    alert(`Successfully withdrew ${available} TON!`);
+                    loadUserData(address);
+                }
+            } catch (e) {
+                console.error('Withdrawal error:', e);
+                alert("Withdrawal failed: " + e.message);
+            }
         }
 
         // دالة نسخ رابط الإحالة
@@ -157,7 +430,13 @@
             });
         }
 
-        function toggleModal(show) { document.getElementById('referral-modal').classList.toggle('hidden', !show); }
+        function toggleModal(show) { 
+            document.getElementById('referral-modal').classList.toggle('hidden', !show); 
+        }
+
+        function toggleEarningsModal(show) { 
+            document.getElementById('earnings-modal').classList.toggle('hidden', !show); 
+        }
 
         async function openReferralList() {
             toggleModal(true);
@@ -173,71 +452,48 @@
                     for (let wallet in data) {
                         html += `
                             <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                                <p class="text-xs font-black text-green-400 mb-1">#${data[wallet].myId}</p>
+                                <div class="flex justify-between items-start mb-2">
+                                    <p class="text-xs font-black text-green-400">#${data[wallet].myId}</p>
+                                    <span class="text-[8px] bg-green-900/30 text-green-400 px-2 py-1 rounded-full">
+                                        Level ${data[wallet].level || 1}
+                                    </span>
+                                </div>
                                 <p class="text-[8px] font-mono text-blue-300 break-all">${wallet}</p>
+                                <div class="mt-2 flex justify-between text-[8px] text-gray-500">
+                                    <span>Earned: <span class="text-green-400">${(data[wallet].totalEarned || 0) * 0.5} TON</span></span>
+                                    <span>50% Commission</span>
+                                </div>
                             </div>`;
                     }
                     container.innerHTML = html;
-                } else { container.innerHTML = '<p class="text-center py-10 text-gray-700">No Partners Yet</p>'; }
-            } catch (e) { console.error(e); }
-        }
-
-        async function loadAllUsersForAdmin() {
-            const list = document.getElementById('admin-data-list');
-            const snap = await database.ref('users').once('value');
-            if (snap.exists()) {
-                const allUsers = snap.val();
-                const usersArr = Object.entries(allUsers);
-                let html = '';
-                for (let [wallet, data] of usersArr) {
-                    const myId = data.myId || "---";
-                    const directCount = usersArr.filter(([w, u]) => u.upline === myId).length;
-                    html += `
-                        <div class="admin-card p-6 rounded-[2.5rem] transition-all border border-purple-500/20">
-                            <div class="flex justify-between items-center mb-4">
-                                <p class="text-lg font-black text-green-400">#${myId}</p>
-                                <span class="text-[9px] bg-purple-600 text-white px-3 py-1 rounded-lg font-black uppercase">Lvl ${data.level || 1}</span>
-                            </div>
-                            <div class="bg-black/50 p-3 rounded-xl border border-white/5 mb-4">
-                                <p class="text-[7px] text-gray-500 uppercase font-bold mb-1 italic">Partner Wallet Address</p>
-                                <p class="text-[9px] font-mono text-blue-300 break-all select-all">${wallet}</p>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div class="bg-white/5 p-2 rounded-lg text-center">
-                                    <p class="text-[7px] text-gray-500 uppercase">Upline ID</p>
-                                    <p class="text-[10px] font-black">#${data.upline || 'ROOT'}</p>
-                                </div>
-                                <div class="bg-white/5 p-2 rounded-lg text-center">
-                                    <p class="text-[7px] text-gray-500 uppercase">Directs</p>
-                                    <p class="text-[10px] font-black text-purple-400">${directCount}</p>
-                                </div>
-                            </div>
-                            <div class="flex gap-2 text-[8px] font-black">
-                                <button onclick="navigator.clipboard.writeText('${wallet}'); alert('Copied')" class="flex-1 bg-white/5 py-2.5 rounded-xl uppercase hover:bg-white/10">Copy Wallet</button>
-                                <a href="https://tonviewer.com/${wallet}" target="_blank" class="flex-1 bg-blue-600/10 text-blue-400 py-2.5 rounded-xl text-center uppercase">Track Activity</a>
-                            </div>
-                        </div>`;
+                } else { 
+                    container.innerHTML = '<p class="text-center py-10 text-gray-700">No Partners Yet</p>'; 
                 }
-                list.innerHTML = html;
+            } catch (e) { 
+                console.error(e); 
+                container.innerHTML = '<p class="text-center py-10 text-red-500">Error loading data</p>';
             }
         }
 
-        function filterAdminList() {
-            const query = document.getElementById('admin-search').value.toLowerCase();
-            const cards = document.querySelectorAll('#admin-data-list > div');
-            cards.forEach(card => card.style.display = card.innerText.toLowerCase().includes(query) ? "block" : "none");
-        }
-
-        function renderLevels(currentLvl, address) {
-            const grid = document.getElementById('levels-grid'); grid.innerHTML = "";
+        function renderLevels(currentLvl, address, userId) {
+            const grid = document.getElementById('levels-grid'); 
+            grid.innerHTML = "";
+            
             for (let i = 1; i <= 20; i++) {
                 let price = LEVEL_PRICES[i];
                 let isActive = i <= currentLvl;
+                
+                // حساب ما سيحصل عليه المحيل (50%)
+                const uplineCommission = price * 0.5;
+                
                 grid.innerHTML += `
-                    <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'border-green-500/30' : 'border-white/5'}">
+                    <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'border-green-500/30 active-level' : 'border-white/5'}">
                         <p class="text-[8px] font-black text-blue-500 uppercase italic mb-2">Level ${i}</p>
-                        <p class="text-xl font-black italic mb-5">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
-                        <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}')`}" 
+                        <p class="text-xl font-black italic mb-2">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
+                        <p class="text-[7px] text-green-400 mb-3 font-bold">
+                            Upline gets: ${uplineCommission} TON
+                        </p>
+                        <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}', '${userId}')`}" 
                             class="w-full py-3 rounded-xl text-[8px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600 hover:bg-blue-500'}">
                             ${isActive ? 'ACTIVATED' : 'UPGRADE'}
                         </button>
@@ -245,16 +501,13 @@
             }
         }
 
-        async function upgradeLevel(level, price, address) {
-            try {
-                let amount = (level === 1 ? 0.8 : price) * 1e9;
-                const transaction = { validUntil: Math.floor(Date.now()/1000)+120, messages: [{ address: TARGET_WALLET, amount: amount.toString() }] };
-                const result = await tonConnectUI.sendTransaction(transaction);
-                if (result) {
-                    await database.ref('users/' + address).update({ level: level });
-                    alert("Level Up!");
-                }
-            } catch (e) { console.error(e); }
+        // دالة لتحميل كل المستخدمين للمشرف
+        async function loadAllUsersForAdmin() {
+            const adminSection = document.getElementById('admin-section');
+            if (adminSection) {
+                adminSection.classList.remove('hidden');
+            }
+            // ... باقي كود المشرف
         }
     </script>
 </body>
