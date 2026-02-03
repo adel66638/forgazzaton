@@ -160,4 +160,59 @@
         }
     </script>
 </body>
+</html>            // معاملة الدفع (1 TON للانضمام)
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 360,
+                messages: [{
+                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
+                    amount: "1000000000" // 1 TON
+                }]
+            };
+
+            try {
+                const result = await tonConnectUI.sendTransaction(transaction);
+                if (result) {
+                    const pendingUplineId = sessionStorage.getItem('pending_upline') || "1000";
+                    
+                    // البحث عن عنوان محفظة الداعي (الأب)
+                    const uplineQuery = await database.ref('users').orderByChild('myId').equalTo(pendingUplineId).once('value');
+                    let uplineWallet = "";
+                    if (uplineQuery.exists()) {
+                        uplineWallet = Object.keys(uplineQuery.val())[0];
+                    }
+
+                    // 1. إنشاء حساب جديد للمشترك
+                    const newId = Math.floor(100000 + Math.random() * 900000).toString();
+                    await userRef.set({
+                        myId: newId,
+                        level: 1,
+                        upline: pendingUplineId,
+                        uplineAddress: uplineWallet,
+                        directReferrals: 0,
+                        indirectReferrals: 0
+                    });
+
+                    // 2. تحديث عدادات الأب والجد (تشغيل العدادات المباشرة وغير المباشرة)
+                    if (uplineWallet) {
+                        // زيادة العداد المباشر (Direct) للأب
+                        await database.ref('users/' + uplineWallet).child('directReferrals').transaction(c => (c || 0) + 1);
+                        
+                        // جلب بيانات الأب لمعرفة الجد
+                        const fatherSnap = await database.ref('users/' + uplineWallet).get();
+                        const grandWallet = fatherSnap.val()?.uplineAddress;
+                        
+                        if (grandWallet) {
+                            // زيادة العداد غير المباشر (Indirect) للجد
+                            await database.ref('users/' + grandWallet).child('indirectReferrals').transaction(c => (c || 0) + 1);
+                        }
+                    }
+
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (e) {
+                alert("Transaction canceled or failed. Please try again.");
+            }
+        }
+    </script>
+</body>
 </html>
