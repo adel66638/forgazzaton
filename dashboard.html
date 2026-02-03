@@ -1,56 +1,84 @@
+
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE FREE | Professional TON Platform</title>
+    <title>FF FORTONE | Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #010413; }
+        body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .hero-gradient { background: radial-gradient(circle at center, #1e40af 0%, #010413 75%); }
-        .ton-3d { width: 80px; height: 80px; filter: drop-shadow(0 0 15px rgba(0, 152, 234, 0.6)); display: inline-block; vertical-align: middle; margin: 0 15px; }
+        .active-level { border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
     </style>
 </head>
-<body class="text-white overflow-x-hidden">
+<body class="p-4 md:p-8">
 
-    <div class="fixed inset-0 hero-gradient -z-10 opacity-60"></div>
-
-    <nav class="flex justify-between items-center p-6 max-w-7xl mx-auto">
-        <div class="text-2xl font-black text-white italic flex items-center tracking-tighter uppercase">
-            <span class="text-blue-500">FF</span> 
-            <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-8 h-8 mx-2" alt="TON"> 
-            FORTONE
-        </div>
+    <nav class="flex justify-between items-center mb-10 max-w-7xl mx-auto">
+        <h1 class="text-3xl font-black italic uppercase tracking-tighter">FF <span class="text-blue-500">FORTONE</span></h1>
         <div id="ton-connect-btn"></div>
     </nav>
 
-    <main class="flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
-        <h1 class="text-5xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tighter uppercase italic">
-            FF <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="ton-3d animate-pulse"> FORTONE
-        </h1>
-
-        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md shadow-2xl border-blue-500/20">
-            <div class="flex justify-between items-center mb-10">
-                <div class="text-left">
-                    <p class="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-1">Entry Ticket</p>
-                    <p class="text-4xl font-black italic">1.00 <span class="text-blue-500 text-xl">TON</span></p>
-                </div>
-                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=035" class="w-14 h-14">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-7xl mx-auto mb-6">
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
+            <p id="user-id" class="text-2xl font-black italic mb-3">#------</p>
+            <div class="pt-2 border-t border-white/5">
+                <p class="text-gray-600 text-[9px] uppercase font-bold">Upline ID</p>
+                <p id="upline-id" class="text-sm font-bold text-blue-400">#------</p>
             </div>
+        </div>
+        
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Referrals (Direct / Indirect)</p>
+            <div class="flex items-baseline gap-2">
+                <p id="direct-refs" class="text-2xl font-black italic text-green-500">0</p>
+                <span class="text-gray-600">/</span>
+                <p id="indirect-refs" class="text-xl font-black italic text-gray-400">0</p>
+            </div>
+            <p class="text-[9px] text-gray-500 mt-2 uppercase font-bold tracking-tighter">Live Team Tracking</p>
+        </div>
+    </div>
 
-            <button id="mainActionButton" onclick="handleMainAction()" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black text-sm uppercase italic tracking-widest transition-all shadow-[0_15px_30px_rgba(37,99,235,0.3)]">
-                <span id="buttonText">Connect Wallet</span>
+    <div class="max-w-7xl mx-auto mb-6">
+        <div class="glass p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-blue-500">
+            <div class="flex-1">
+                <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your Referral Link</p>
+                <p id="ref-link-text" class="text-sm font-mono text-blue-300 break-all">Connect wallet to see link...</p>
+            </div>
+            <button onclick="copyRefLink()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl text-xs font-black uppercase transition-all shadow-lg shadow-blue-900/40">
+                Copy Link
             </button>
         </div>
-    </main>
+    </div>
+
+    <div class="max-w-7xl mx-auto mb-12">
+        <div class="glass p-6 rounded-[2rem] border-b-2 border-yellow-500 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+                <p class="text-gray-500 text-[10px] uppercase font-black tracking-[0.2em] mb-1">Total Earned</p>
+                <div class="flex items-baseline gap-2">
+                    <p id="total-earned" class="text-4xl font-black italic text-white">0.00</p>
+                    <span class="text-yellow-500 font-bold italic">TON</span>
+                </div>
+            </div>
+            <button onclick="requestWithdraw()" class="w-full md:w-auto bg-gradient-to-r from-yellow-600 to-yellow-400 hover:from-yellow-500 hover:to-yellow-300 text-black px-12 py-4 rounded-2xl text-sm font-black uppercase transition-all transform hover:scale-105 shadow-xl shadow-yellow-900/20">
+                Withdraw Balance
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+        <h2 class="text-sm font-black uppercase tracking-[0.3em] mb-8 text-center text-gray-500">Marketing Levels</h2>
+        <div id="levels-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+    </div>
 
     <script>
-        // --- 1. إعداد Firebase (معلوماتك الأصلية محفوظة) ---
+        // --- CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
             authDomain: "ff-fortone.firebaseapp.com",
@@ -63,101 +91,116 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // التقاط الإحالة من الرابط وحفظها مؤقتاً
-        const urlParams = new URLSearchParams(window.location.search);
-        const refFromUrl = urlParams.get('ref');
-        if (refFromUrl) sessionStorage.setItem('pending_upline', refFromUrl);
+        const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
 
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-btn'
         });
 
-        // مراقبة حالة المحفظة
-        tonConnectUI.onStatusChange(async wallet => {
-            const btnText = document.getElementById('buttonText');
+        tonConnectUI.onStatusChange(wallet => {
             if (wallet) {
-                const address = wallet.account.address;
-                const snap = await database.ref('users/' + address).get();
-                if (snap.exists() && snap.val().level > 0) {
-                    btnText.innerText = "Open Dashboard";
-                } else {
-                    btnText.innerText = "Pay 1 TON to Join";
-                }
+                loadUserData(wallet.account.address);
             } else {
-                btnText.innerText = "Connect Wallet";
+                window.location.href = 'index.html';
             }
         });
 
-        async function handleMainAction() {
-            if (!tonConnectUI.connected) {
-                await tonConnectUI.openModal();
-                return;
+        // وظيفة السحب
+        function requestWithdraw() {
+            const balance = document.getElementById('total-earned').innerText;
+            if (parseFloat(balance) <= 0) {
+                alert("You don't have enough balance to withdraw.");
+            } else {
+                alert(`Withdrawal request for ${balance} TON has been submitted!`);
             }
+        }
 
-            const address = tonConnectUI.wallet.account.address;
-            const userRef = database.ref('users/' + address);
-            const userSnap = await userRef.get();
+        async function loadUserData(address) {
+            database.ref('users/' + address).on('value', async (snap) => {
+                const userData = snap.val();
+                if (!userData) return;
 
-            // إذا كان مسجلاً مسبقاً، يفتح الداشبورد
-            if (userSnap.exists() && userSnap.val().level > 0) {
-                window.location.href = 'dashboard.html';
-                return;
-            }
+                const myId = userData.myId || "------";
 
-            // معاملة الدفع (1 TON للانضمام)
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 360,
-                messages: [{
-                    address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
-                    amount: "1000000000" // 1 TON
-                }]
-            };
+                const directQuery = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
+                const directCount = directQuery.numChildren();
 
-            try {
-                const result = await tonConnectUI.sendTransaction(transaction);
-                if (result) {
-                    const pendingUplineId = sessionStorage.getItem('pending_upline') || "1000";
-                    
-                    // البحث عن عنوان محفظة الداعي (الأب)
-                    const uplineQuery = await database.ref('users').orderByChild('myId').equalTo(pendingUplineId).once('value');
-                    let uplineWallet = "";
-                    if (uplineQuery.exists()) {
-                        uplineWallet = Object.keys(uplineQuery.val())[0];
-                    }
-
-                    // 1. إنشاء حساب جديد للمشترك
-                    const newId = Math.floor(100000 + Math.random() * 900000).toString();
-                    await userRef.set({
-                        myId: newId,
-                        level: 1,
-                        upline: pendingUplineId,
-                        uplineAddress: uplineWallet,
-                        directReferrals: 0,
-                        indirectReferrals: 0
-                    });
-
-                    // 2. تحديث عدادات الأب والجد (تشغيل العدادات المباشرة وغير المباشرة)
-                    if (uplineWallet) {
-                        // زيادة العداد المباشر (Direct) للأب
-                        await database.ref('users/' + uplineWallet).child('directReferrals').transaction(c => (c || 0) + 1);
-                        
-                        // جلب بيانات الأب لمعرفة الجد
-                        const fatherSnap = await database.ref('users/' + uplineWallet).get();
-                        const grandWallet = fatherSnap.val()?.uplineAddress;
-                        
-                        if (grandWallet) {
-                            // زيادة العداد غير المباشر (Indirect) للجد
-                            await database.ref('users/' + grandWallet).child('indirectReferrals').transaction(c => (c || 0) + 1);
+                let indirectCount = 0;
+                if (directQuery.exists()) {
+                    const children = directQuery.val();
+                    for (let childAddress in children) {
+                        const childId = children[childAddress].myId;
+                        if(childId) {
+                            const indirectQuery = await database.ref('users').orderByChild('upline').equalTo(childId).once('value');
+                            indirectCount += indirectQuery.numChildren();
                         }
                     }
-
-                    window.location.href = 'dashboard.html';
                 }
-            } catch (e) {
-                alert("Transaction canceled or failed. Please try again.");
+
+                document.getElementById('user-id').innerText = "#" + myId;
+                document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
+                document.getElementById('direct-refs').innerText = directCount;
+                document.getElementById('indirect-refs').innerText = indirectCount;
+                
+                // تحديث الأرباح (إذا كانت موجودة في قاعدة البيانات، وإلا تظهر 0)
+                document.getElementById('total-earned').innerText = userData.earnings || "0.00";
+
+                const baseUrl = window.location.origin;
+                document.getElementById('ref-link-text').innerText = `${baseUrl}/index.html?ref=${myId}`;
+
+                renderLevels(userData.level, address);
+            });
+        }
+
+        function renderLevels(currentLvl, address) {
+            const grid = document.getElementById('levels-grid');
+            grid.innerHTML = "";
+            for (let i = 1; i <= 20; i++) {
+                let price = LEVEL_PRICES[i];
+                let isActive = i <= currentLvl;
+                grid.innerHTML += `
+                    <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'active-level' : 'border-white/5'}">
+                        <div class="flex justify-between items-start mb-4">
+                            <p class="text-[8px] font-black text-blue-500 uppercase italic">Level ${i}</p>
+                            ${isActive ? '<span class="text-[7px] text-green-500 font-bold bg-green-500/10 px-2 py-0.5 rounded-full uppercase">Active</span>' : ''}
+                        </div>
+                        <p class="text-2xl font-black italic mb-6">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
+                        <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}')`}" 
+                            class="w-full py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all 
+                            ${isActive ? 'bg-green-600/10 text-green-500 cursor-default border border-green-500/20' : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/30'}"
+                            ${isActive ? 'disabled' : ''}>
+                            ${isActive ? 'ACTIVATED' : 'UPGRADE'}
+                        </button>
+                    </div>`;
+            }
+        }
+
+        async function upgradeLevel(level, price, address) {
+            try {
+                let finalAmount = (level === 1) ? (0.8 * 1e9).toString() : (BigInt(price) * BigInt(1e9)).toString();
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 120,
+                    messages: [{
+                        address: "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx", 
+                        amount: finalAmount
+                    }]
+                };
+                const result = await tonConnectUI.sendTransaction(transaction);
+                if (result) {
+                    await database.ref('users/' + address).update({ level: level });
+                    alert("Success! Upgrade completed.");
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function copyRefLink() {
+            const link = document.getElementById('ref-link-text').innerText;
+            if (link.includes('http')) {
+                navigator.clipboard.writeText(link);
+                alert("Referral link copied!");
             }
         }
     </script>
 </body>
-</html>
+            </html>
