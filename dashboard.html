@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FF FORTONE | Master Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- استخدم إصدار ثابت -->
-    <script src="https://unpkg.com/@tonconnect/ui@2.1.0/dist/tonconnect-ui.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://unpkg.com/ton-core@0.54.0/dist/browser.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
@@ -17,6 +17,7 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #2563eb; border-radius: 10px; }
         .admin-card { background: linear-gradient(145deg, rgba(88, 28, 135, 0.15), rgba(15, 23, 42, 0.5)); border: 1px solid rgba(168, 85, 247, 0.2); }
+        .smart-contract-badge { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -24,230 +25,43 @@
     <nav class="flex justify-between items-center mb-10 max-w-7xl mx-auto">
         <h1 class="text-3xl font-black italic uppercase tracking-tighter">FF <span class="text-blue-500">FORTONE</span></h1>
         <div id="ton-connect-btn"></div>
-        <!-- زر بديل -->
-        <button onclick="tonConnectUI.openModal()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-sm font-bold hidden" id="manual-connect">
-            Connect Wallet
-        </button>
     </nav>
 
-    <script>
-        // تكوين Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyA4oGEMOmaraubqk8oS...", 
-            authDomain: "ff-fortone.firebaseapp.com",
-            databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
-            projectId: "ff-fortone",
-            storageBucket: "ff-fortone.appspot.com",
-            messagingSenderId: "890615410300",
-            appId: "1:890615410300:web:5659f9..."
-        };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        const MY_ADMIN_ID = "555497"; 
-        const TARGET_WALLET = "EQArCYm0PgvhmKI4GGMDpuOrbFZha";
-        const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
-
-        // تكوين TonConnect
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn',
-            uiPreferences: {
-                theme: 'DARK',
-                borderRadius: 's'
-            }
-        });
-
-        // عند تغيير حالة المحفظة
-        tonConnectUI.onStatusChange(async (wallet) => {
-            console.log('Wallet status:', wallet ? 'Connected' : 'Disconnected');
-            
-            if (wallet) {
-                console.log('Wallet address:', wallet.account.address);
-                
-                // إخفاء الزر البديل
-                document.getElementById('manual-connect').classList.add('hidden');
-                
-                // جلب الـ referrer من URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const referrerId = urlParams.get('ref');
-                
-                // إنشاء أو جلب المستخدم
-                const userData = await createNewUser(wallet.account.address, referrerId);
-                
-                if (userData) {
-                    loadUserData(wallet.account.address);
-                } else {
-                    alert("Error: Could not create user profile");
-                }
-            } else {
-                // عرض الزر البديل إذا فشل TonConnect
-                setTimeout(() => {
-                    if (!tonConnectUI.connected) {
-                        document.getElementById('manual-connect').classList.remove('hidden');
-                    }
-                }, 2000);
-            }
-        });
-
-        // دالة إنشاء مستخدم
-        async function createNewUser(walletAddress, referrerId = null) {
-            try {
-                const userRef = database.ref('users/' + walletAddress);
-                const snapshot = await userRef.once('value');
-                
-                if (snapshot.exists()) {
-                    return snapshot.val();
-                }
-                
-                const newId = Math.floor(100000 + Math.random() * 900000).toString();
-                
-                const userData = {
-                    myId: newId,
-                    upline: referrerId || null,
-                    level: 1,
-                    createdAt: Date.now()
-                };
-                
-                await userRef.set(userData);
-                console.log('New user created with ID:', newId);
-                
-                return userData;
-                
-            } catch (error) {
-                console.error('Create user error:', error);
-                return null;
-            }
-        }
-
-        // باقي الدوال (loadUserData, renderLevels, etc.) تبقى كما هي
-        // ...
-    </script>        }
-
-        // دالة نسخ رابط الإحالة
-        function copyReferralLink() {
-            const copyText = document.getElementById("referral-url");
-            if (copyText.value.includes('Connecting')) {
-                alert("Please connect wallet first");
-                return;
-            }
-            
-            navigator.clipboard.writeText(copyText.value).then(() => {
-                alert("✅ Copied: " + copyText.value);
-            }).catch(err => {
-                console.error('Copy error:', err);
-                alert("❌ Copy failed");
-            });
-        }
-
-        function toggleModal(show) { 
-            document.getElementById('referral-modal').classList.toggle('hidden', !show); 
-        }
-
-        async function openReferralList() {
-            toggleModal(true);
-            const container = document.getElementById('referrals-container');
-            const myId = document.getElementById('user-id').innerText.replace('#', '');
-            container.innerHTML = '<p class="text-center text-gray-600 animate-pulse text-[10px]">LOADING TEAM WALLETS...</p>';
-
-            try {
-                const snap = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
-                if (snap.exists()) {
-                    let html = '';
-                    const data = snap.val();
-                    for (let wallet in data) {
-                        html += `
-                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
-                                <p class="text-xs font-black text-green-400 mb-1">#${data[wallet].myId}</p>
-                                <p class="text-[8px] font-mono text-blue-300 break-all">${wallet}</p>
-                            </div>`;
-                    }
-                    container.innerHTML = html;
-                } else { 
-                    container.innerHTML = '<p class="text-center py-10 text-gray-700">No Partners Yet</p>'; 
-                }
-            } catch (e) { 
-                console.error(e); 
-                container.innerHTML = '<p class="text-center py-10 text-red-500">Error loading data</p>';
-            }
-        }
-
-        function renderLevels(currentLvl, address, userId) {
-            const grid = document.getElementById('levels-grid'); 
-            grid.innerHTML = "";
-            
-            for (let i = 1; i <= 20; i++) {
-                let price = LEVEL_PRICES[i];
-                let isActive = i <= currentLvl;
-                
-                grid.innerHTML += `
-                    <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'border-green-500/30 active-level' : 'border-white/5'}">
-                        <p class="text-[8px] font-black text-blue-500 uppercase italic mb-2">Level ${i}</p>
-                        <p class="text-xl font-black italic mb-5">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
-                        <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}', '${userId}')`}" 
-                            class="w-full py-3 rounded-xl text-[8px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500 cursor-default' : 'bg-blue-600 hover:bg-blue-500'}">
-                            ${isActive ? 'ACTIVATED' : 'UPGRADE'}
-                        </button>
-                    </div>`;
-            }
-        }
-
-        // دالة المشرف
-        async function loadAllUsersForAdmin() {
-            const list = document.getElementById('admin-data-list');
-            const snap = await database.ref('users').once('value');
-            if (snap.exists()) {
-                const allUsers = snap.val();
-                const usersArr = Object.entries(allUsers);
-                let html = '';
-                for (let [wallet, data] of usersArr) {
-                    const myId = data.myId || "---";
-                    const directCount = usersArr.filter(([w, u]) => u.upline === myId).length;
-                    html += `
-                        <div class="admin-card p-6 rounded-[2.5rem] transition-all border border-purple-500/20">
-                            <div class="flex justify-between items-center mb-4">
-                                <p class="text-lg font-black text-green-400">#${myId}</p>
-                                <span class="text-[9px] bg-purple-600 text-white px-3 py-1 rounded-lg font-black uppercase">Lvl ${data.level || 1}</span>
-                            </div>
-                            <div class="bg-black/50 p-3 rounded-xl border border-white/5 mb-4">
-                                <p class="text-[7px] text-gray-500 uppercase font-bold mb-1 italic">Partner Wallet Address</p>
-                                <p class="text-[9px] font-mono text-blue-300 break-all select-all">${wallet}</p>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 mb-4">
-                                <div class="bg-white/5 p-2 rounded-lg text-center">
-                                    <p class="text-[7px] text-gray-500 uppercase">Upline ID</p>
-                                    <p class="text-[10px] font-black">#${data.upline || 'ROOT'}</p>
-                                </div>
-                                <div class="bg-white/5 p-2 rounded-lg text-center">
-                                    <p class="text-[7px] text-gray-500 uppercase">Directs</p>
-                                    <p class="text-[10px] font-black text-purple-400">${directCount}</p>
-                                </div>
-                            </div>
-                            <div class="flex gap-2 text-[8px] font-black">
-                                <button onclick="navigator.clipboard.writeText('${wallet}'); alert('Copied')" class="flex-1 bg-white/5 py-2.5 rounded-xl uppercase hover:bg-white/10">Copy Wallet</button>
-                                <a href="https://tonviewer.com/${wallet}" target="_blank" class="flex-1 bg-blue-600/10 text-blue-400 py-2.5 rounded-xl text-center uppercase">Track Activity</a>
-                            </div>
-                        </div>`;
-                }
-                list.innerHTML = html;
-            }
-        }
-
-        function filterAdminList() {
-            const query = document.getElementById('admin-search').value.toLowerCase();
-            const cards = document.querySelectorAll('#admin-data-list > div');
-            cards.forEach(card => card.style.display = card.innerText.toLowerCase().includes(query) ? "block" : "none");
-        }
-    </script>
-</body>
-</html>                <button onclick="toggleEarningsModal(false)" class="text-gray-500 hover:text-white text-3xl">&times;</button>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-7xl mx-auto mb-6">
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID</p>
+            <p id="user-id" class="text-2xl font-black italic mb-3">#------</p>
+            <div class="pt-2 border-t border-white/5">
+                <p class="text-gray-600 text-[9px] uppercase font-bold">Upline Wallet</p>
+                <p id="upline-wallet" class="text-[11px] font-mono text-blue-300 break-all">None</p>
             </div>
-            <div id="earnings-history" class="p-6 max-h-[60vh] overflow-y-auto space-y-3">
-                <div class="text-center py-8">
-                    <p class="text-gray-600 text-sm">No earnings yet</p>
-                    <p class="text-gray-500 text-[10px] mt-2">Earn 50% from each referral payment</p>
-                </div>
+        </div>
+        
+        <div onclick="openReferralList()" class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500 cursor-pointer hover:bg-white/5 transition-all transform active:scale-95">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Team (Direct / Indirect)</p>
+            <div class="flex items-baseline gap-2">
+                <p id="direct-refs" class="text-2xl font-black italic text-green-500">0</p>
+                <span class="text-gray-600 text-xs">Direct</span>
+                <span class="text-gray-700 mx-1">/</span>
+                <p id="indirect-refs" class="text-xl font-black italic text-gray-400">0</p>
             </div>
+            <p class="text-[9px] text-gray-500 mt-2 uppercase font-bold italic tracking-tighter">View Your Network Wallets</p>
+        </div>
+
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-purple-500 col-span-1 md:col-span-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="smart-contract-badge text-[8px] px-3 py-1 rounded-full font-black">SMART CONTRACT 50/50</span>
+                <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest">Share Your Referral Link</p>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 bg-black/40 p-3 rounded-2xl border border-white/5">
+                <input type="text" id="referral-url" readonly 
+                    class="bg-transparent border-none outline-none text-[11px] font-mono text-blue-300 w-full truncate" 
+                    value="Connect your wallet...">
+                <button onclick="copyReferralLink()" class="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-[10px] font-black px-6 py-2.5 rounded-xl transition-all active:scale-95">
+                    COPY LINK
+                </button>
+            </div>
+            <p class="text-[8px] text-gray-500 mt-2 text-center">Smart contract auto-splits 50% to upline wallet</p>
         </div>
     </div>
 
@@ -279,108 +93,101 @@
             messagingSenderId: "890615410300",
             appId: "1:890615410300:web:5659f9..."
         };
+        
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        const MY_ADMIN_ID = "555497"; 
-        const TARGET_WALLET = "EQArCYm0PgvhmKI4GGMDpuOrbFZha";
-        const PROJECT_WALLET = TARGET_WALLET; // 50% للمشروع
+        // ⭐⭐⭐ عنوان Smart Contract ⭐⭐⭐
+        const SMART_CONTRACT = "EQArCYm0PgvhmKI4GGMDpuOrbFZha";
+        
+        const MY_ADMIN_ID = "555497";
         const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
-        const COMMISSION_RATE = 0.5; // 50%
 
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
             buttonRootId: 'ton-connect-btn'
         });
 
-        // دالة لإنشاء مستخدم جديد مع نظام 50/50
-        async function createNewUser(walletAddress, referrerId = null) {
-            const userRef = database.ref('users/' + walletAddress);
+        // دالة لتحويل عنوان إلى Cell/Slice
+        function addressToPayload(uplineAddress) {
+            if (!uplineAddress) {
+                return null; // لا يوجد محيل
+            }
             
-            // تحقق إذا المستخدم موجود
+            try {
+                // طريقة 1: استخدام comment بسيط (إذا كان العقد يقرأ منه)
+                // return `referrer:${uplineAddress}`;
+                
+                // طريقة 2: إنشاء Cell كما في Tact
+                // نستخدم ton-core لإنشاء payload
+                const { beginCell } = window.tonCore;
+                
+                // بناء payload للعقد (الصيغة المتوقعة)
+                const payload = beginCell()
+                    .storeUint(0x12345678, 32) // op code (يجب معرفته من العقد)
+                    .storeAddress(uplineAddress) // عنوان المحيل
+                    .endCell()
+                    .toBoc()
+                    .toString('base64');
+                
+                console.log("Payload created:", payload);
+                return payload;
+                
+            } catch (error) {
+                console.error("Error creating payload:", error);
+                return null;
+            }
+        }
+
+        tonConnectUI.onStatusChange(async (wallet) => {
+            if (wallet) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const referrerId = urlParams.get('ref');
+                
+                await createOrGetUser(wallet.account.address, referrerId);
+                loadUserData(wallet.account.address);
+            } else {
+                resetUI();
+            }
+        });
+
+        async function createOrGetUser(walletAddress, referrerId = null) {
+            const userRef = database.ref('users/' + walletAddress);
             const snapshot = await userRef.once('value');
+            
             if (snapshot.exists()) {
                 return snapshot.val();
             }
             
-            // إنشاء ID جديد
             const newId = Math.floor(100000 + Math.random() * 900000).toString();
             
-            // بيانات المستخدم الجديد
+            // البحث عن محفظة المحيل إذا كان هناك referrerId
+            let uplineWallet = null;
+            if (referrerId) {
+                const uplineSnapshot = await database.ref('users')
+                    .orderByChild('myId')
+                    .equalTo(referrerId)
+                    .once('value');
+                
+                if (uplineSnapshot.exists()) {
+                    const uplineData = uplineSnapshot.val();
+                    uplineWallet = Object.keys(uplineData)[0];
+                }
+            }
+            
             const userData = {
                 myId: newId,
-                upline: referrerId || null,
+                uplineId: referrerId || null,
+                uplineWallet: uplineWallet || null,
                 level: 1,
-                totalEarned: 0,
-                availableEarnings: 0,
-                totalReferrals: 0,
                 createdAt: Date.now(),
-                earningsHistory: {}
+                wallet: walletAddress
             };
             
             await userRef.set(userData);
-            
-            // إذا كان هناك محيل، تحديث أرباحه
-            if (referrerId) {
-                await updateUplineEarnings(referrerId, 1, 0.5); // 0.5 TON للمستوى الأول
-            }
-            
+            console.log("User created/retrieved:", userData);
             return userData;
         }
-
-        // دالة لتحديث أرباح المحيل
-        async function updateUplineEarnings(uplineId, level, price) {
-            // البحث عن المحيل بواسطة ID
-            const uplineSnapshot = await database.ref('users')
-                .orderByChild('myId')
-                .equalTo(uplineId)
-                .once('value');
-            
-            if (uplineSnapshot.exists()) {
-                const uplineData = uplineSnapshot.val();
-                const uplineAddress = Object.keys(uplineData)[0];
-                const uplineUser = uplineData[uplineAddress];
-                
-                // حساب العمولة (50%)
-                const commission = price * COMMISSION_RATE;
-                
-                // تحديث أرباح المحيل
-                await database.ref('users/' + uplineAddress).update({
-                    totalEarned: (uplineUser.totalEarned || 0) + commission,
-                    availableEarnings: (uplineUser.availableEarnings || 0) + commission,
-                    totalReferrals: (uplineUser.totalReferrals || 0) + 1
-                });
-                
-                // إضافة للسجل
-                const paymentId = Date.now().toString();
-                await database.ref('earnings_history/' + uplineAddress + '/' + paymentId).set({
-                    amount: commission,
-                    fromLevel: level,
-                    fromPrice: price,
-                    timestamp: Date.now(),
-                    fromUserId: uplineId,
-                    type: 'referral_commission'
-                });
-                
-                console.log(`Commission ${commission} TON sent to upline ${uplineId}`);
-            }
-        }
-
-        tonConnectUI.onStatusChange(async wallet => {
-            if (wallet) {
-                // جلب الـ referrer من URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const referrerId = urlParams.get('ref');
-                
-                // إنشاء أو جلب المستخدم
-                await createNewUser(wallet.account.address, referrerId);
-                
-                // تحميل البيانات
-                loadUserData(wallet.account.address);
-            } else {
-                window.location.href = 'index.html';
-            }
-        });
 
         async function loadUserData(address) {
             database.ref('users/' + address).on('value', async (snap) => {
@@ -389,261 +196,227 @@
 
                 const myId = String(userData.myId || "");
 
-                // تحديث واجهة المستخدم
                 document.getElementById('user-id').innerText = "#" + myId;
-                document.getElementById('upline-id').innerText = "#" + (userData.upline || "None");
-                document.getElementById('total-earned').innerText = (userData.totalEarned || 0) + " TON";
-                document.getElementById('total-earnings').innerText = (userData.totalEarned || 0) + " TON";
-                document.getElementById('available-earnings').innerText = (userData.availableEarnings || 0) + " TON";
                 
-                // تحديث آخر دفعة
-                if (userData.lastPayment) {
-                    document.getElementById('last-payment').innerText = userData.lastPayment.amount + " TON";
-                    document.getElementById('last-payment-date').innerText = 
-                        new Date(userData.lastPayment.timestamp).toLocaleDateString();
+                // عرض عنوان محفظة المحيل
+                if (userData.uplineWallet) {
+                    const shortWallet = userData.uplineWallet.length > 12 ? 
+                        userData.uplineWallet.substring(0, 8) + "..." + userData.uplineWallet.substring(38) : 
+                        userData.uplineWallet;
+                    document.getElementById('upline-wallet').innerText = shortWallet;
+                } else {
+                    document.getElementById('upline-wallet').innerText = "None";
                 }
                 
-                // توليد رابط الإحالة تلقائياً
                 const referralUrl = window.location.origin + "/index.html?ref=" + myId;
                 document.getElementById('referral-url').value = referralUrl;
 
                 if (myId === MY_ADMIN_ID) {
-                    document.getElementById('admin-section').classList.remove('hidden');
-                    loadAllUsersForAdmin();
+                    document.getElementById('admin-section')?.classList.remove('hidden');
                 }
 
-                // حساب referrals المباشرين
-                const directQuery = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
+                const directQuery = await database.ref('users').orderByChild('uplineId').equalTo(myId).once('value');
                 document.getElementById('direct-refs').innerText = directQuery.numChildren();
-
-                // حساب referrals غير المباشرين (مستوى ثاني)
-                let indirectCount = 0;
-                directQuery.forEach(directRef => {
-                    indirectCount += directRef.val().totalReferrals || 0;
-                });
-                document.getElementById('indirect-refs').innerText = indirectCount;
 
                 renderLevels(userData.level, address, myId);
             });
         }
 
-        // دالة الترقية بنظام 50/50
+        // ⭐⭐⭐ دالة الترقية مع إرسال referrer في payload ⭐⭐⭐
         async function upgradeLevel(level, price, address, userId) {
             try {
-                // السعر الكامل
-                const fullAmount = LEVEL_PRICES[level] * 1e9;
+                // جلب بيانات المستخدم لمعرفة محفظة المحيل
+                const userSnap = await database.ref('users/' + address).once('value');
+                const userData = userSnap.val();
                 
-                // 50% للمشروع
-                const projectAmount = Math.floor(fullAmount * 0.5);
-                
-                // 50% للمحيل (إذا موجود)
-                let uplineAmount = 0;
-                let uplineAddress = null;
-                
-                // البحث عن المحيل
-                const userSnapshot = await database.ref('users/' + address).once('value');
-                const userData = userSnapshot.val();
-                
-                if (userData && userData.upline) {
-                    const uplineSnapshot = await database.ref('users')
-                        .orderByChild('myId')
-                        .equalTo(userData.upline)
-                        .once('value');
-                    
-                    if (uplineSnapshot.exists()) {
-                        const uplineData = uplineSnapshot.val();
-                        uplineAddress = Object.keys(uplineData)[0];
-                        uplineAmount = Math.floor(fullAmount * 0.5);
-                    }
+                if (!userData) {
+                    alert("❌ User data not found");
+                    return;
                 }
                 
-                // إنشاء معاملة متعددة المستقبلين
-                const messages = [
-                    {
-                        address: PROJECT_WALLET,
-                        amount: projectAmount.toString()
-                    }
-                ];
+                const uplineWallet = userData.uplineWallet;
                 
-                // إذا كان هناك محيل، أضف له 50%
-                if (uplineAddress && uplineAmount > 0) {
-                    messages.push({
-                        address: uplineAddress,
-                        amount: uplineAmount.toString()
-                    });
+                let confirmMessage = `Upgrade to Level ${level} for ${price} TON?\n\n`;
+                
+                if (uplineWallet) {
+                    confirmMessage += `✅ 50% will be auto-sent to upline wallet\n`;
+                    confirmMessage += `📍 ${uplineWallet.substring(0, 12)}...\n\n`;
+                    confirmMessage += `✅ 50% will go to project wallet`;
+                } else {
+                    confirmMessage += `❌ No upline - 100% goes to project`;
                 }
                 
+                if (!confirm(confirmMessage)) {
+                    return;
+                }
+                
+                const amount = price * 1e9; // تحويل لـ nanoTON
+                
+                // ⭐⭐⭐ تحويل عنوان المحيل إلى payload ⭐⭐⭐
+                let payload = null;
+                if (uplineWallet) {
+                    payload = addressToPayload(uplineWallet);
+                    console.log("Upline payload:", payload);
+                }
+                
+                // ⭐⭐⭐ إنشاء المعاملة مع payload ⭐⭐⭐
                 const transaction = {
-                    validUntil: Math.floor(Date.now()/1000) + 300,
-                    messages: messages
+                    validUntil: Math.floor(Date.now() / 1000) + 300,
+                    messages: [{
+                        address: SMART_CONTRACT,
+                        amount: amount.toString(),
+                        // ⭐⭐⭐ إضافة payload مع بيانات المحيل ⭐⭐⭐
+                        payload: payload || undefined
+                    }]
                 };
                 
-                // إرسال المعاملة
+                console.log("Transaction details:", {
+                    to: SMART_CONTRACT,
+                    amount: price + " TON",
+                    upline: uplineWallet || "none",
+                    hasPayload: !!payload
+                });
+                
+                // ⭐⭐⭐ إرسال المعاملة ⭐⭐⭐
                 const result = await tonConnectUI.sendTransaction(transaction);
                 
-                if (result) {
+                if (result && result.boc) {
                     // تحديث مستوى المستخدم
-                    await database.ref('users/' + address).update({ level: level });
+                    await database.ref('users/' + address).update({ 
+                        level: level,
+                        lastUpgrade: {
+                            level: level,
+                            amount: price,
+                            timestamp: Date.now(),
+                            txId: result.boc,
+                            upline: uplineWallet || "none"
+                        }
+                    });
                     
-                    // تحديث أرباح المحيل في قاعدة البيانات
-                    if (userData.upline) {
-                        await updateUplineEarnings(userData.upline, level, LEVEL_PRICES[level]);
+                    if (uplineWallet) {
+                        alert(`✅ Success! Level ${level} activated.\n📤 50% auto-sent to upline wallet via smart contract.`);
+                    } else {
+                        alert(`✅ Success! Level ${level} activated.\n📤 100% sent to project wallet.`);
                     }
                     
-                    alert("Level Up! 50% sent to your upline if exists.");
+                    // تحديث الواجهة
+                    renderLevels(level, address, userId);
                     loadUserData(address); // تحديث البيانات
+                    
+                } else {
+                    alert("❌ Transaction failed - no response");
                 }
-            } catch (e) {
-                console.error('Upgrade error:', e);
-                alert("Upgrade failed: " + e.message);
+                
+            } catch (error) {
+                console.error('❌ Upgrade error:', error);
+                
+                let errorMessage = "Payment failed";
+                
+                if (error.message && error.message.includes('Wrong address format')) {
+                    errorMessage = "❌ Invalid smart contract address";
+                } else if (error.message && error.message.includes('Rejected')) {
+                    errorMessage = "❌ Transaction rejected by user";
+                } else if (error.message && error.message.includes('insufficient')) {
+                    errorMessage = "💰 Insufficient balance";
+                } else if (error.message && error.message.includes('payload')) {
+                    errorMessage = "⚠️ Error creating referral data";
+                }
+                
+                alert(errorMessage + ": " + (error.message || ""));
             }
         }
 
-        // دالة سحب الأرباح
-        async function withdrawEarnings() {
+        function copyReferralLink() {
+            const copyText = document.getElementById("referral-url");
+            if (!copyText || copyText.value.includes('Connect your wallet')) {
+                alert("Please connect wallet first");
+                return;
+            }
+            
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                alert("✅ Referral link copied!");
+            }).catch(err => {
+                console.error('Copy error:', err);
+                alert("❌ Failed to copy");
+            });
+        }
+
+        function toggleModal(show) { 
+            const modal = document.getElementById('referral-modal');
+            if (modal) {
+                modal.classList.toggle('hidden', !show);
+            }
+        }
+
+        async function openReferralList() {
             const address = tonConnectUI.account?.address;
             if (!address) {
                 alert("Please connect wallet first");
                 return;
             }
             
-            const userSnapshot = await database.ref('users/' + address).once('value');
-            const userData = userSnapshot.val();
-            
-            const available = userData.availableEarnings || 0;
-            if (available <= 0) {
-                alert("No earnings available to withdraw");
-                return;
-            }
-            
-            if (!confirm(`Withdraw ${available} TON to your wallet?`)) {
-                return;
-            }
-            
-            try {
-                const amount = available * 1e9; // تحويل لـ nanoTON
-                
-                const transaction = {
-                    validUntil: Math.floor(Date.now()/1000) + 300,
-                    messages: [{
-                        address: address, // إرسال لنفسه
-                        amount: amount.toString()
-                    }]
-                };
-                
-                const result = await tonConnectUI.sendTransaction(transaction);
-                
-                if (result) {
-                    // تحديث الرصيد بعد السحب
-                    await database.ref('users/' + address).update({
-                        availableEarnings: 0,
-                        lastPayment: {
-                            amount: available,
-                            timestamp: Date.now(),
-                            transactionId: result.boc
-                        }
-                    });
-                    
-                    alert(`Successfully withdrew ${available} TON!`);
-                    loadUserData(address);
-                }
-            } catch (e) {
-                console.error('Withdrawal error:', e);
-                alert("Withdrawal failed: " + e.message);
-            }
-        }
-
-        // دالة نسخ رابط الإحالة
-        function copyReferralLink() {
-            const copyText = document.getElementById("referral-url");
-            if (copyText.value.includes('...')) return; 
-            
-            navigator.clipboard.writeText(copyText.value).then(() => {
-                alert("Copied: " + copyText.value);
-            }).catch(err => {
-                console.error('Error copying text: ', err);
-            });
-        }
-
-        function toggleModal(show) { 
-            document.getElementById('referral-modal').classList.toggle('hidden', !show); 
-        }
-
-        function toggleEarningsModal(show) { 
-            document.getElementById('earnings-modal').classList.toggle('hidden', !show); 
-        }
-
-        async function openReferralList() {
             toggleModal(true);
             const container = document.getElementById('referrals-container');
             const myId = document.getElementById('user-id').innerText.replace('#', '');
-            container.innerHTML = '<p class="text-center text-gray-600 animate-pulse text-[10px]">LOADING TEAM WALLETS...</p>';
+            
+            if (!myId || myId === "------") {
+                container.innerHTML = '<p class="text-center py-10 text-gray-700">Connect wallet first</p>';
+                return;
+            }
+            
+            container.innerHTML = '<p class="text-center text-gray-600 animate-pulse text-[10px]">Loading team...</p>';
 
             try {
-                const snap = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
+                const snap = await database.ref('users').orderByChild('uplineId').equalTo(myId).once('value');
                 if (snap.exists()) {
                     let html = '';
                     const data = snap.val();
+                    let count = 0;
+                    
                     for (let wallet in data) {
+                        count++;
+                        const user = data[wallet];
                         html += `
-                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-green-500/30 transition-colors">
                                 <div class="flex justify-between items-start mb-2">
-                                    <p class="text-xs font-black text-green-400">#${data[wallet].myId}</p>
-                                    <span class="text-[8px] bg-green-900/30 text-green-400 px-2 py-1 rounded-full">
-                                        Level ${data[wallet].level || 1}
+                                    <p class="text-xs font-black text-green-400">#${user.myId}</p>
+                                    <span class="text-[8px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+                                        Lvl ${user.level || 1}
                                     </span>
                                 </div>
-                                <p class="text-[8px] font-mono text-blue-300 break-all">${wallet}</p>
-                                <div class="mt-2 flex justify-between text-[8px] text-gray-500">
-                                    <span>Earned: <span class="text-green-400">${(data[wallet].totalEarned || 0) * 0.5} TON</span></span>
-                                    <span>50% Commission</span>
+                                <p class="text-[8px] font-mono text-blue-300 break-all mb-2">${wallet}</p>
+                                <div class="text-[8px] text-gray-500">
+                                    Earned: <span class="text-green-400 font-bold">${((user.level || 1) * 0.5).toFixed(1)} TON</span> commission
                                 </div>
                             </div>`;
                     }
+                    
+                    if (html === '') {
+                        html = '<p class="text-center py-10 text-gray-700">No team members yet</p>';
+                    }
+                    
                     container.innerHTML = html;
+                    
                 } else { 
-                    container.innerHTML = '<p class="text-center py-10 text-gray-700">No Partners Yet</p>'; 
+                    container.innerHTML = '<p class="text-center py-10 text-gray-700">No team members yet</p>'; 
                 }
             } catch (e) { 
-                console.error(e); 
+                console.error('Error loading referrals:', e); 
                 container.innerHTML = '<p class="text-center py-10 text-red-500">Error loading data</p>';
             }
         }
 
         function renderLevels(currentLvl, address, userId) {
             const grid = document.getElementById('levels-grid'); 
+            if (!grid) return;
+            
             grid.innerHTML = "";
             
             for (let i = 1; i <= 20; i++) {
                 let price = LEVEL_PRICES[i];
                 let isActive = i <= currentLvl;
                 
-                // حساب ما سيحصل عليه المحيل (50%)
-                const uplineCommission = price * 0.5;
-                
                 grid.innerHTML += `
                     <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'border-green-500/30 active-level' : 'border-white/5'}">
                         <p class="text-[8px] font-black text-blue-500 uppercase italic mb-2">Level ${i}</p>
-                        <p class="text-xl font-black italic mb-2">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
-                        <p class="text-[7px] text-green-400 mb-3 font-bold">
-                            Upline gets: ${uplineCommission} TON
-                        </p>
-                        <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}', '${userId}')`}" 
-                            class="w-full py-3 rounded-xl text-[8px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600 hover:bg-blue-500'}">
-                            ${isActive ? 'ACTIVATED' : 'UPGRADE'}
-                        </button>
-                    </div>`;
-            }
-        }
-
-        // دالة لتحميل كل المستخدمين للمشرف
-        async function loadAllUsersForAdmin() {
-            const adminSection = document.getElementById('admin-section');
-            if (adminSection) {
-                adminSection.classList.remove('hidden');
-            }
-            // ... باقي كود المشرف
-        }
-    </script>
-</body>
-</html>
+ 
