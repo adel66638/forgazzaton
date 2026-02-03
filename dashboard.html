@@ -397,4 +397,215 @@
                 
                 if (error.message && error.message.includes('Wrong address format')) {
                     errorMessage = "❌ Invalid smart contract address";
-                } else if (error.message && error.message.includes('R
+                } else if (error.message && error.message.includes('Rejected')) {
+                    errorMessage = "❌ Transaction rejected by user";
+                } else if (error.message && error.message.includes('insufficient')) {
+                    errorMessage = "💰 Insufficient balance";
+                }
+                
+                alert(errorMessage + ": " + (error.message || ""));
+            }
+        }
+
+        // ✅ دالة سحب الأرباح
+        async function withdrawEarnings() {
+            const address = tonConnectUI.account?.address;
+            if (!address) {
+                alert("❌ Please connect your wallet first");
+                return;
+            }
+            
+            try {
+                // جلب بيانات المستخدم
+                const userSnap = await database.ref('users/' + address).once('value');
+                const userData = userSnap.val();
+                
+                if (!userData) {
+                    alert("❌ User data not found");
+                    return;
+                }
+                
+                const availableEarnings = userData.availableEarnings || 0;
+                
+                if (availableEarnings <= 0) {
+                    alert("❌ No earnings available to withdraw");
+                    return;
+                }
+                
+                // تأكيد السحب
+                if (!confirm(`Withdraw ${availableEarnings} TON to your wallet?`)) {
+                    return;
+                }
+                
+                // إرسال المبلغ للمستخدم نفسه
+                const amount = availableEarnings * 1e9;
+                
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 120,
+                    messages: [{
+                        address: address,
+                        amount: amount.toString()
+                    }]
+                };
+                
+                const result = await tonConnectUI.sendTransaction(transaction);
+                
+                if (result && result.boc) {
+                    // تحديث بيانات المستخدم بعد السحب
+                    await database.ref('users/' + address).update({
+                        availableEarnings: 0,
+                        lastWithdrawal: {
+                            amount: availableEarnings,
+                            timestamp: Date.now(),
+                            txId: result.boc
+                        }
+                    });
+                    
+                    alert(`✅ Successfully withdrew ${availableEarnings} TON!`);
+                    
+                    loadUserData(address);
+                    
+                } else {
+                    alert("❌ Withdrawal failed");
+                }
+                
+            } catch (error) {
+                console.error('Withdraw error:', error);
+                alert("❌ Withdrawal failed: " + (error.message || "Unknown error"));
+            }
+        }
+
+        function copyReferralLink() {
+            const copyText = document.getElementById("referral-url");
+            if (!copyText || copyText.value.includes('Connect your wallet')) {
+                alert("Please connect wallet first");
+                return;
+            }
+            
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                alert("✅ Referral link copied!");
+            }).catch(err => {
+                console.error('Copy error:', err);
+                alert("❌ Failed to copy");
+            });
+        }
+
+        function toggleModal(show) { 
+            const modal = document.getElementById('referral-modal');
+            if (modal) {
+                modal.classList.toggle('hidden', !show);
+            }
+        }
+
+        async function openReferralList() {
+            const address = tonConnectUI.account?.address;
+            if (!address) {
+                alert("Please connect wallet first");
+                return;
+            }
+            
+            toggleModal(true);
+            const container = document.getElementById('referrals-container');
+            const myId = document.getElementById('user-id').innerText.replace('#', '');
+            
+            if (!myId || myId === "------") {
+                container.innerHTML = '<p class="text-center py-10 text-gray-700">Connect wallet first</p>';
+                return;
+            }
+            
+            container.innerHTML = '<p class="text-center text-gray-600 animate-pulse text-[10px]">Loading team...</p>';
+
+            try {
+                const snap = await database.ref('users').orderByChild('uplineId').equalTo(myId).once('value');
+                if (snap.exists()) {
+                    let html = '';
+                    const data = snap.val();
+                    
+                    for (let wallet in data) {
+                        const user = data[wallet];
+                        html += `
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                <div class="flex justify-between items-start mb-2">
+                                    <p class="text-xs font-black text-green-400">#${user.myId}</p>
+                                    <span class="text-[8px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+                                        Lvl ${user.level || 1}
+                                    </span>
+                                </div>
+                                <p class="text-[8px] font-mono text-blue-300 break-all mb-2">${wallet}</p>
+                                <div class="text-[8px] text-gray-500">
+                                    Earned: <span class="text-green-400 font-bold">${user.totalEarned || 0} TON</span> commission
+                                </div>
+                            </div>`;
+                    }
+                    
+                    container.innerHTML = html;
+                    
+                } else { 
+                    container.innerHTML = '<p class="text-center py-10 text-gray-700">No team members yet</p>'; 
+                }
+            } catch (e) { 
+                console.error('Error loading referrals:', e); 
+                container.innerHTML = '<p class="text-center py-10 text-red-500">Error loading data</p>';
+            }
+        }
+
+        function renderLevels(currentLvl, address, userId) {
+            const grid = document.getElementById('levels-grid'); 
+            if (!grid) return;
+            
+            grid.innerHTML = "";
+            
+            for (let i = 1; i <= 20; i++) {
+                let price = LEVEL_PRICES[i];
+                let isActive = i <= currentLvl;
+                
+                grid.innerHTML += `
+                    <div class="glass p-6 rounded-[2rem] text-center border transition-all ${isActive ? 'border-green-500/30 active-level' : 'border-white/5'}">
+                        <p class="text-[8px] font-black text-blue-500 uppercase italic mb-2">Level ${i}</p>
+                        <p class="text-xl font-black italic mb-3">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
+                        <div class="text-[7px] text-gray-500 mb-3">
+                            <span class="text-green-400">${(price * 0.5).toFixed(1)} TON</span> → Upline
+                        </div>
+                        <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}', '${userId}')`}" 
+                            class="w-full py-3 rounded-xl text-[8px] font-black uppercase transition-all ${isActive ? 'bg-green-600/10 text-green-500 cursor-default' : 'bg-blue-600 hover:bg-blue-500 active:scale-95'}">
+                            ${isActive ? '✅ ACTIVATED' : '🚀 UPGRADE'}
+                        </button>
+                    </div>`;
+            }
+        }
+
+        function resetUI() {
+            document.getElementById('user-id').innerText = "#------";
+            document.getElementById('upline-id').innerText = "#------";
+            document.getElementById('available-earnings').innerText = "0 TON";
+            document.getElementById('total-earned').innerText = "0 TON";
+            document.getElementById('available-balance').innerText = "0 TON";
+            document.getElementById('direct-refs').innerText = "0";
+            document.getElementById('referral-url').value = "Connect your wallet...";
+            
+            const grid = document.getElementById('levels-grid');
+            if (grid) {
+                grid.innerHTML = "";
+            }
+        }
+
+        // Fallback إذا لم يتم تحميل ton-core
+        if (typeof window.tonCore === 'undefined') {
+            console.warn("ton-core not loaded, using simple payload format");
+            window.tonCore = {
+                beginCell: () => ({
+                    storeUint: () => ({ 
+                        storeAddress: () => ({
+                            endCell: () => ({
+                                toBoc: () => ({
+                                    toString: () => "simple-payload"
+                                })
+                            })
+                        })
+                    })
+                })
+            };
+        }
+    </script>
+</body>
+</html>
