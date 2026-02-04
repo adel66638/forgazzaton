@@ -1,73 +1,101 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF FORTONE | Dashboard</title>
+    <title>FF FORTONE | Master Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #010413; color: white; font-family: sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .admin-card { background: rgba(88, 28, 135, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); }
+        body { background-color: #010413; color: white; font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .active-level { border-color: rgba(34, 197, 94, 0.4); box-shadow: 0 0 20px rgba(34, 197, 94, 0.1); }
+        .admin-card { background: linear-gradient(145deg, rgba(88, 28, 135, 0.15), rgba(15, 23, 42, 0.5)); border: 1px solid rgba(168, 85, 247, 0.2); }
+        .notification-toast { animation: slideIn 0.5s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <nav class="flex justify-between items-center mb-8 max-w-7xl mx-auto">
-        <h1 class="text-2xl font-black italic">FF <span class="text-blue-500">FORTONE</span></h1>
-        <div id="ton-connect-btn"></div>
+    <nav class="flex justify-between items-center mb-10 max-w-7xl mx-auto">
+        <h1 class="text-3xl font-black italic uppercase tracking-tighter">FF <span class="text-blue-500">FORTONE</span></h1>
+        <div class="flex items-center gap-4">
+            <div class="relative">
+                <span id="notif-dot" class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full hidden border border-black"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+            </div>
+            <div id="ton-connect-btn"></div>
+        </div>
     </nav>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-7xl mx-auto mb-6">
-        <div class="glass p-6 rounded-[2rem] border-t-2 border-blue-600">
-            <p class="text-gray-500 text-[10px] uppercase font-bold text-right">ID / Upline</p>
-            <p id="user-id" class="text-2xl font-black text-right">#------</p>
-            <p id="upline-id" class="text-xs text-blue-400 text-right">Upline: #------</p>
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-blue-600">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your ID / Upline</p>
+            <p id="user-id" class="text-2xl font-black italic mb-1">#------</p>
+            <p id="upline-id" class="text-sm font-bold text-blue-400">#------</p>
         </div>
-        <div class="glass p-6 rounded-[2rem] border-t-2 border-green-500 text-center">
-            <p class="text-gray-500 text-[10px] uppercase font-bold">إجمالي الأرباح</p>
-            <p id="total-earned" class="text-3xl font-black text-green-500">0.00</p>
-            <span class="text-[10px]">TON</span>
+        
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-green-500">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Total Earned (50%)</p>
+            <div class="flex items-baseline gap-2">
+                <p id="total-earned" class="text-2xl font-black italic text-green-500">0.00</p>
+                <span class="text-gray-600 text-xs">TON</span>
+            </div>
+            <p id="pending-status" class="text-[9px] text-orange-400 mt-2 uppercase font-bold italic hidden">● PENDING REVIEW</p>
         </div>
-        <div class="glass p-6 rounded-[2rem] border-t-2 border-purple-500 text-right">
-            <p class="text-gray-500 text-[10px] uppercase font-bold">الفريق المباشر</p>
-            <p id="direct-refs" class="text-2xl font-black text-purple-500">0</p>
+
+        <div class="glass p-6 rounded-[2.5rem] border-t-2 border-purple-500">
+            <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Direct Team</p>
+            <p id="direct-refs" class="text-2xl font-black italic text-purple-500">0</p>
+            <p class="text-[9px] text-gray-500 mt-2 uppercase font-bold italic tracking-tighter">Partners connected</p>
         </div>
     </div>
 
     <div class="max-w-7xl mx-auto mb-6">
-        <div class="glass p-6 rounded-[2rem] border border-blue-500/20 bg-blue-500/5">
-            <p class="text-gray-500 text-[10px] uppercase font-black mb-3 text-right">رابط الإحالة الخاص بك</p>
-            <div class="flex gap-2">
-                <button onclick="copyRef()" class="bg-blue-600 px-6 py-2 rounded-xl text-[10px] font-black">نسخ</button>
-                <input type="text" id="referral-url" readonly class="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-blue-300 flex-1 outline-none text-left font-mono" value="جاري التحميل...">
+        <div class="glass p-4 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 border-l-4 border-blue-500">
+            <div>
+                <p class="text-gray-500 text-[10px] uppercase font-black tracking-widest mb-1">Your Referral Link</p>
+                <p id="ref-link-text" class="text-xs font-mono text-blue-300 break-all">Connect wallet to see link</p>
             </div>
+            <button onclick="copyRefLink()" class="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase transition-all">
+                Copy Link
+            </button>
         </div>
     </div>
 
-    <div id="admin-section" class="max-w-7xl mx-auto mb-10 hidden">
-        <div class="glass p-6 rounded-[2.5rem] border-t-4 border-purple-600">
-            <div class="flex flex-col md:flex-row justify-between mb-6 gap-4">
-                <div class="flex gap-2">
-                    <button onclick="switchTab('users')" id="btn-users" class="bg-purple-600 px-4 py-2 rounded-lg text-[10px] font-black uppercase">كل المشتركين</button>
-                    <button onclick="switchTab('pay')" id="btn-pay" class="bg-white/5 px-4 py-2 rounded-lg text-[10px] font-black uppercase">المستحقات للدفع</button>
+    <div id="admin-section" class="max-w-7xl mx-auto mb-20 hidden">
+        <div class="glass p-8 rounded-[3rem] border-t-4 border-purple-600 bg-purple-900/10">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <div class="flex gap-4">
+                    <button onclick="switchAdminTab('all-users')" id="tab-btn-users" class="px-6 py-2 rounded-xl bg-purple-600 text-[10px] font-black uppercase">All Members</button>
+                    <button onclick="switchAdminTab('affiliates')" id="tab-btn-aff" class="px-6 py-2 rounded-xl bg-white/5 text-[10px] font-black uppercase hover:bg-white/10">Payouts List</button>
                 </div>
-                <input type="text" id="admin-search" onkeyup="searchAdmin()" placeholder="بحث عن ID أو محفظة..." class="bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-xs outline-none w-full md:w-64 text-right">
+                <input type="text" id="admin-search" onkeyup="filterAdminList()" placeholder="البحث عن ID أو محفظة..." 
+                    class="w-full md:w-80 bg-black/50 border border-white/10 rounded-2xl px-5 py-3 text-xs focus:border-purple-500 outline-none">
             </div>
-            <div id="tab-users" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            <div id="tab-pay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
+
+            <div id="tab-all-users" class="admin-tab-content">
+                <div id="admin-all-users-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+            <div id="tab-affiliates" class="admin-tab-content hidden">
+                <div id="admin-affiliates-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
         </div>
     </div>
 
-    <div id="levels-grid" class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-4 mb-20"></div>
+    <div class="max-w-7xl mx-auto mb-20">
+        <h2 class="text-sm font-black uppercase tracking-[0.3em] mb-8 text-center text-gray-500">Marketing Levels</h2>
+        <div id="levels-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+    </div>
 
     <script>
-        // تهيئة Firebase - استبدل البيانات ببياناتك الحقيقية
-        const firebaseConfig = { 
-            apiKey: "AIzaSy...",
+        const firebaseConfig = {
+            apiKey: "AIzaSy...", 
             authDomain: "ff-fortone.firebaseapp.com",
             databaseURL: "https://ff-fortone-default-rtdb.firebaseio.com",
             projectId: "ff-fortone",
@@ -79,107 +107,53 @@
         const database = firebase.database();
 
         const MY_ADMIN_ID = "555497"; 
+        const TARGET_WALLET = "UQBufh6lLHE5H1NDJXQwRIVCX-t4iKHyyoXD0Spm8N9navPx";
         const LEVEL_PRICES = [0, 1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200];
+        let lastEarnings = null;
 
-        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({ 
-            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json', 
-            buttonRootId: 'ton-connect-btn' 
+        const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+            manifestUrl: 'https://forgazzaton.vercel.app/tonconnect-manifest.json',
+            buttonRootId: 'ton-connect-btn'
         });
 
         tonConnectUI.onStatusChange(wallet => {
-            if (wallet) loadUserData(wallet.account.address);
-            else window.location.href = 'index.html';
+            if (wallet) { loadUserData(wallet.account.address); }
+            else { window.location.href = 'index.html'; }
         });
 
         async function loadUserData(address) {
             database.ref('users/' + address).on('value', async (snap) => {
-                const data = snap.val(); if (!data) return;
-                const myId = String(data.myId || "");
-                
-                document.getElementById('user-id').innerText = "#" + myId;
-                document.getElementById('upline-id').innerText = "Upline: #" + (data.upline || "None");
-                document.getElementById('total-earned').innerText = (data.earnings || 0).toFixed(2);
-                
-                // توليد رابط الحالة للمستخدم
-                document.getElementById('referral-url').value = window.location.origin + "/index.html?ref=" + myId;
+                const userData = snap.val();
+                if (!userData) return;
 
-                if (myId === MY_ADMIN_ID) { 
-                    document.getElementById('admin-section').classList.remove('hidden'); 
-                    loadAdmin(); 
-                }
-                
-                const direct = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
-                document.getElementById('direct-refs').innerText = direct.numChildren();
-                renderLevels(data.level || 1);
-            });
-        }
-
-        async function loadAdmin() {
-            const snap = await database.ref('users').once('value'); if (!snap.exists()) return;
-            let uHtml = '', pHtml = '';
-            Object.entries(snap.val()).forEach(([wallet, u]) => {
-                const card = `<div class="admin-card p-4 rounded-2xl text-right">
-                    <p class="text-green-400 font-black">ID: #${u.myId} (الأب: #${u.upline || '0'})</p>
-                    <div class="mt-2 bg-black/40 p-2 rounded border border-white/5">
-                        <p class="text-[8px] text-gray-500 font-bold mb-1 italic">Wallet Address:</p>
-                        <p class="text-[9px] font-mono text-blue-300 break-all text-left">${wallet}</p>
-                    </div>
-                    <div class="flex gap-2 mt-3">
-                        <button onclick="navigator.clipboard.writeText('${wallet}');alert('تم النسخ')" class="bg-white/10 px-2 py-1 rounded text-[8px] uppercase">Copy Wallet</button>
-                        ${u.earnings > 0 ? `<button onclick="pay('${wallet}')" class="bg-green-600 px-2 py-1 rounded text-[8px] uppercase mr-auto font-black">Pay ${u.earnings} TON</button>` : ''}
-                    </div>
-                </div>`;
-                uHtml += card;
-                if (u.earnings > 0) pHtml += card;
-            });
-            document.getElementById('tab-users').innerHTML = uHtml;
-            document.getElementById('tab-pay').innerHTML = pHtml || '<p class="text-xs p-10 text-center opacity-50 italic">لا توجد دفعات حالياً</p>';
-        }
-
-        async function pay(w) { if(confirm("هل تم تحويل المبلغ للمحفظة؟ سيتم تصفير الرصيد الآن.")) { await database.ref('users/' + w).update({ earnings: 0 }); loadAdmin(); } }
-        function switchTab(t) { 
-            document.getElementById('tab-users').classList.toggle('hidden', t!=='users'); 
-            document.getElementById('tab-pay').classList.toggle('hidden', t!=='pay'); 
-            document.getElementById('btn-users').className = t==='users' ? 'bg-purple-600 px-4 py-2 rounded-lg text-[10px] font-black uppercase' : 'bg-white/5 px-4 py-2 rounded-lg text-[10px] font-black uppercase';
-            document.getElementById('btn-pay').className = t==='pay' ? 'bg-purple-600 px-4 py-2 rounded-lg text-[10px] font-black uppercase' : 'bg-white/5 px-4 py-2 rounded-lg text-[10px] font-black uppercase';
-        }
-        function searchAdmin() { 
-            const q = document.getElementById('admin-search').value.toLowerCase(); 
-            document.querySelectorAll('.admin-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q) ? 'block' : 'none'); 
-        }
-        function copyRef() { 
-            const link = document.getElementById('referral-url');
-            if(link.value.includes('..')) return;
-            navigator.clipboard.writeText(link.value); 
-            alert("تم نسخ الرابط!"); 
-        }
-
-        function renderLevels(lvl) {
-            let h = '';
-            for(let i=1; i<=20; i++) {
-                let active = i <= lvl;
-                h += `<div class="glass p-4 rounded-2xl text-center border ${active ? 'border-green-500' : 'border-white/5'}">
-                    <p class="text-[8px] text-blue-500 font-black">LEVEL ${i}</p>
-                    <p class="text-lg font-black my-2">${LEVEL_PRICES[i]} <span class="text-[8px]">TON</span></p>
-                    <button class="w-full py-2 rounded-lg text-[8px] font-black ${active ? 'bg-green-600/20 text-green-500' : 'bg-blue-600'}">${active ? 'نشط' : 'ترقية'}</button>
-                </div>`;
-            }
-            document.getElementById('levels-grid').innerHTML = h;
-        }
-    </script>
-</body>
-</html>
-
-                // تحديث البيانات
+                const myId = String(userData.myId || "");
                 document.getElementById('user-id').innerText = "#" + myId;
                 document.getElementById('upline-id').innerText = "Upline: #" + (userData.upline || "None");
-                document.getElementById('total-earned').innerText = (userData.earnings || 0).toFixed(2);
                 
-                // توليد وتحديث رابط الإحالة
-                const referralUrl = window.location.origin + "/index.html?ref=" + myId;
-                document.getElementById('referral-url').value = referralUrl;
+                // تحديث رابط الإحالة
+                const baseUrl = window.location.origin + window.location.pathname.replace('dashboard.html', 'index.html');
+                const refLink = `${baseUrl}?ref=${myId}`;
+                document.getElementById('ref-link-text').innerText = refLink;
 
-                if (myId === MY_ADMIN_ID) { document.getElementById('admin-section').classList.remove('hidden'); }
+                const currentEarnings = userData.earnings || 0;
+                document.getElementById('total-earned').innerText = currentEarnings.toFixed(2);
+                
+                if (userData.status === "pending" && currentEarnings > 0) {
+                    document.getElementById('pending-status').classList.remove('hidden');
+                } else {
+                    document.getElementById('pending-status').classList.add('hidden');
+                }
+
+                if (lastEarnings !== null && currentEarnings > lastEarnings) {
+                    showNotification(`New Commission: +${(currentEarnings - lastEarnings).toFixed(2)} TON`);
+                    document.getElementById('notif-dot').classList.remove('hidden');
+                }
+                lastEarnings = currentEarnings;
+
+                if (myId === MY_ADMIN_ID) {
+                    document.getElementById('admin-section').classList.remove('hidden');
+                    loadAllUsersForAdmin();
+                }
 
                 const directQuery = await database.ref('users').orderByChild('upline').equalTo(myId).once('value');
                 document.getElementById('direct-refs').innerText = directQuery.numChildren();
@@ -188,13 +162,116 @@
             });
         }
 
-        function copyReferralLink() {
-            const copyText = document.getElementById("referral-url");
-            if (copyText.value.includes('...')) return;
-            
-            navigator.clipboard.writeText(copyText.value).then(() => {
-                alert("Link Copied Successfully!");
+        // دالة نسخ الرابط
+        function copyRefLink() {
+            const link = document.getElementById('ref-link-text').innerText;
+            if(link.includes('http')) {
+                navigator.clipboard.writeText(link);
+                alert("Referral link copied!");
+            }
+        }
+
+        async function upgradeLevel(level, price, address) {
+            try {
+                let amountVal = (level === 1 ? 0.8 : price);
+                let finalAmount = (BigInt(Math.floor(amountVal * 1e9))).toString();
+                
+                const transaction = {
+                    validUntil: Math.floor(Date.now()/1000)+120,
+                    messages: [{ address: TARGET_WALLET, amount: finalAmount }]
+                };
+
+                const result = await tonConnectUI.sendTransaction(transaction);
+                if (result) {
+                    await database.ref('users/' + address).update({ level: level });
+                    const userSnap = await database.ref('users/' + address).once('value');
+                    const uplineId = userSnap.val().upline;
+
+                    if (uplineId && uplineId !== "None") {
+                        const uplineQuery = await database.ref('users').orderByChild('myId').equalTo(uplineId).once('value');
+                        if (uplineQuery.exists()) {
+                            const uplineWallet = Object.keys(uplineQuery.val())[0];
+                            const currentUplineEarnings = uplineQuery.val()[uplineWallet].earnings || 0;
+                            await database.ref('users/' + uplineWallet).update({ 
+                                earnings: currentUplineEarnings + (amountVal * 0.5),
+                                status: "pending"
+                            });
+                        }
+                    }
+                    alert("Level Up Success!");
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            document.getElementById('tab-btn-users').className = tab === 'all-users' ? 'px-6 py-2 rounded-xl bg-purple-600 text-[10px] font-black uppercase' : 'px-6 py-2 rounded-xl bg-white/5 text-[10px] font-black uppercase hover:bg-white/10';
+            document.getElementById('tab-btn-aff').className = tab === 'affiliates' ? 'px-6 py-2 rounded-xl bg-purple-600 text-[10px] font-black uppercase' : 'px-6 py-2 rounded-xl bg-white/5 text-[10px] font-black uppercase hover:bg-white/10';
+        }
+
+        async function loadAllUsersForAdmin() {
+            const snap = await database.ref('users').once('value');
+            if (!snap.exists()) return;
+            const usersArr = Object.entries(snap.val());
+            let usersHtml = '';
+            let affHtml = '';
+
+            usersArr.forEach(([wallet, data]) => {
+                const myId = data.myId || "---";
+                const earn = data.earnings || 0;
+                usersHtml += `
+                    <div class="admin-card p-5 rounded-[2rem]">
+                        <p class="text-green-400 font-black">ID: #${myId}</p>
+                        <p class="text-[9px] text-gray-400 uppercase font-bold">Upline: #${data.upline || 'ROOT'}</p>
+                        <div class="mt-3 bg-black/40 p-3 rounded-xl border border-white/5">
+                            <p class="text-[7px] text-gray-500 uppercase font-bold mb-1 italic">Wallet Address:</p>
+                            <p class="text-[9px] font-mono text-blue-300 break-all select-all">${wallet}</p>
+                        </div>
+                        <div class="mt-3 flex gap-2">
+                            <button onclick="navigator.clipboard.writeText('${wallet}'); alert('Copied!')" 
+                                class="flex-1 bg-white/10 py-2 rounded-lg text-[8px] font-black uppercase hover:bg-white/20 transition-all">Copy</button>
+                            <a href="https://tonviewer.com/${wallet}" target="_blank" 
+                                class="flex-1 bg-blue-600/20 text-blue-400 py-2 rounded-lg text-[8px] font-black text-center uppercase">Explorer</a>
+                        </div>
+                    </div>`;
+
+                if (earn > 0) {
+                    affHtml += `
+                        <div class="admin-card p-5 rounded-[2rem] border-2 border-yellow-500/30 bg-yellow-500/5">
+                            <div class="flex justify-between items-center mb-3">
+                                <p class="text-yellow-500 font-black">#${myId}</p>
+                                <span class="bg-yellow-600 text-white px-2 py-1 rounded text-[10px] font-bold">${earn.toFixed(2)} TON</span>
+                            </div>
+                            <p class="text-[8px] text-gray-400 truncate mb-3">${wallet}</p>
+                            <button onclick="resetEarnings('${wallet}')" class="w-full bg-green-600 hover:bg-green-500 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all shadow-lg shadow-green-900/20">Mark as Paid (Reset)</button>
+                        </div>`;
+                }
             });
+            document.getElementById('admin-all-users-list').innerHTML = usersHtml;
+            document.getElementById('admin-affiliates-list').innerHTML = affHtml || '<p class="p-10 text-gray-600 text-sm italic">No pending payouts found.</p>';
+        }
+
+        async function resetEarnings(wallet) {
+            if(confirm("هل تم دفع المبلغ بالفعل؟ سيتم تصفير رصيد المحيل الآن.")) {
+                await database.ref('users/' + wallet).update({ earnings: 0, status: "paid" });
+                loadAllUsersForAdmin();
+            }
+        }
+
+        function filterAdminList() {
+            const query = document.getElementById('admin-search').value.toLowerCase().trim();
+            document.querySelectorAll('.admin-card').forEach(card => {
+                card.style.display = card.innerText.toLowerCase().includes(query) ? "block" : "none";
+            });
+        }
+
+        function showNotification(msg) {
+            const t = document.createElement('div');
+            t.className = "notification-toast fixed bottom-5 right-5 bg-blue-600 p-4 rounded-2xl shadow-2xl z-50 font-black text-[10px] uppercase border border-white/10";
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 5000);
         }
 
         function renderLevels(currentLvl, address) {
@@ -206,7 +283,8 @@
                     <div class="glass p-6 rounded-[2rem] text-center border ${isActive ? 'active-level' : 'border-white/5'}">
                         <p class="text-[8px] font-black text-blue-500 uppercase italic mb-2">Level ${i}</p>
                         <p class="text-xl font-black italic mb-5">${price} <span class="text-[10px] text-gray-500 not-italic">TON</span></p>
-                        <button class="w-full py-3 rounded-xl text-[8px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600 hover:bg-blue-500'}">
+                        <button onclick="${isActive ? '' : `upgradeLevel(${i}, ${price}, '${address}')`}" 
+                            class="w-full py-3 rounded-xl text-[8px] font-black uppercase ${isActive ? 'bg-green-600/10 text-green-500' : 'bg-blue-600 hover:bg-blue-500'}">
                             ${isActive ? 'ACTIVATED' : 'UPGRADE'}
                         </button>
                     </div>`;
